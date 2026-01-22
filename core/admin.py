@@ -6,6 +6,8 @@ from .models import Unidade, Categoria, Bem, Gestor
 class UnidadeAdmin(admin.ModelAdmin):
     list_display = ('id', 'nome', 'endereco')
     search_fields = ('nome',)
+    # list_filter = ('unidade',) # Removido esta linha que causava o erro
+
 
 @admin.register(Categoria)
 class CategoriaAdmin(admin.ModelAdmin):

@@ -18,7 +18,7 @@ O núcleo do sistema, responsável pela lógica de negócios, banco de dados e s
 * **Banco de Dados:** SQLite (Desenvolvimento)
 * **Autenticação:** JWT (JSON Web Tokens) via `djangorestframework-simplejwt`
 * **Segurança de API:** `django-cors-headers` (Controle de acesso CORS)
-* **Interface Administrativa:** Customizada com **Jazzmin**
+* **Interface Administrativa:** Customizada
 * **Documentação da API:** `drf-spectacular` (Swagger/OpenAPI)
 
 ### ⚛️ Frontend (Interface do Usuário)
@@ -72,4 +72,4 @@ cd frontend
 npm install
 
 # Inicie o servidor de desenvolvimento
-npm start
+npm start.

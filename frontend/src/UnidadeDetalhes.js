@@ -23,6 +23,8 @@ function UnidadeDetalhes() {
     obs_baixa: ''
   });
 
+  const [salaSelecionada, setSalaSelecionada] = useState('todas'); // estado para filtrar por sala
+
   useEffect(() => {
     carregarBens();
     const token = localStorage.getItem('access_token');
@@ -81,6 +83,26 @@ function UnidadeDetalhes() {
     bem.tombo.includes(filtro)
   );
 
+  // Lista de salas únicas
+  const salas = Array.from(new Set(bensFiltrados.map(bem => bem.sala || 'Sem Sala')));
+
+  // Agrupa bens por sala, considerando a sala selecionada
+  const bensAgrupados = () => {
+    const agrupamento = {};
+
+    bensFiltrados.forEach(bem => {
+      if (salaSelecionada !== 'todas' && (bem.sala || 'Sem Sala') !== salaSelecionada) return;
+
+      const nomeSala = 'Sala ' + bem.sala_nome || 'Sem Sala';
+      if (!agrupamento[nomeSala]) agrupamento[nomeSala] = [];
+      agrupamento[nomeSala].push(bem);
+    });
+
+    return agrupamento;
+  };
+
+  const bensPorSala = bensAgrupados();
+
   return (
     <div className="dashboard-container">
       <Sidebar />
@@ -106,6 +128,35 @@ function UnidadeDetalhes() {
             />
         </div>
 
+        {/* Botões de salas */}
+        <div style={{marginBottom: '10px'}}>
+          <button 
+            onClick={() => setSalaSelecionada('todas')}
+            style={{
+              marginRight: '5px', padding:'5px 10px', 
+              background: salaSelecionada === 'todas' ? '#2563eb' : '#e2e8f0', 
+              color: salaSelecionada === 'todas' ? 'white' : 'black', 
+              border:'none', borderRadius:'4px', cursor:'pointer'
+            }}
+          >
+            Todas
+          </button>
+          {salas.map((sala, idx) => (
+            <button
+              key={idx}
+              onClick={() => setSalaSelecionada(sala)}
+              style={{
+                marginRight: '5px', padding:'5px 10px', 
+                background: salaSelecionada === sala ? '#2563eb' : '#e2e8f0', 
+                color: salaSelecionada === sala ? 'white' : 'black', 
+                border:'none', borderRadius:'4px', cursor:'pointer'
+              }}
+            >
+              {sala}
+            </button>
+          ))}
+        </div>
+
         <div className="panel table-panel">
             <table className="custom-table">
               <thead>
@@ -120,44 +171,47 @@ function UnidadeDetalhes() {
                 </tr>
               </thead>
               <tbody>
-                {bensFiltrados.map((bem) => (
-                  <tr key={bem.id} style={{ opacity: bem.data_baixa ? 0.6 : 1, background: bem.data_baixa ? '#f8f8f8' : 'white' }}>
-                    <td><strong>{bem.tombo}</strong></td>
-                    <td>{bem.nome}</td>
-                    
-                    {/* --- AQUI ESTÁ A CORREÇÃO VISUAL --- */}
-                    <td>
-                        {/* Verifica ALUGADO ou Alugado */}
-                        {(bem.origem === 'ALUGADO' || bem.origem === 'Alugado') && 
-                            <span style={{background: '#d97706', color:'white', padding:'4px 10px', borderRadius:'12px', fontSize:'11px', fontWeight:'bold', textTransform:'uppercase'}}>ALUGADO</span>
-                        }
-                        
-                        {(bem.origem === 'DOACAO' || bem.origem === 'Doacao') && 
-                            <span style={{background: '#2563eb', color:'white', padding:'4px 10px', borderRadius:'12px', fontSize:'11px', fontWeight:'bold', textTransform:'uppercase'}}>DOAÇÃO</span>
-                        }
-                        
-                        {/* Se não for nenhum dos dois, mostra Próprio */}
-                        {(bem.origem !== 'ALUGADO' && bem.origem !== 'Alugado' && bem.origem !== 'DOACAO' && bem.origem !== 'Doacao') && 
-                            <span style={{color: '#64748b', fontSize:'12px', fontWeight:'500'}}>Próprio</span>
-                        }
-                    </td>
+                {Object.keys(bensPorSala).map((salaNome, indexSala) => (
+                  <React.Fragment key={indexSala}>
+                    {/* Linha de título da sala */}
+                    <tr style={{background: '#93d8eb', fontWeight: 'bold'}}> {/* Alterado o background aqui */}
+                      <td colSpan="7">{salaNome}</td>
+                    </tr>
 
-                    <td>{bem.situacao}</td>
-                    <td>{bem.estado_conservacao}</td>
-                    <td>
-                        {bem.data_baixa ? 
-                            <span style={{color:'red', fontWeight:'bold', fontSize:'12px'}}>BAIXADO</span> 
-                            : <span style={{color:'green', fontWeight:'bold', fontSize:'12px'}}>ATIVO</span>}
-                    </td>
-                    <td>
-                        <button 
+                    {/* Linhas dos bens dessa sala */}
+                    {bensPorSala[salaNome].map(bem => (
+                      <tr key={bem.id} style={{ opacity: bem.data_baixa ? 0.6 : 1, background: bem.data_baixa ? '#f8f8f8' : 'white' }}>
+                        <td><strong>{bem.tombo}</strong></td>
+                        <td>{bem.nome}</td>
+                        <td>
+                          {(bem.origem === 'ALUGADO' || bem.origem === 'Alugado') && 
+                              <span style={{background: '#d97706', color:'white', padding:'4px 10px', borderRadius:'12px', fontSize:'11px', fontWeight:'bold', textTransform:'uppercase'}}>ALUGADO</span>
+                          }
+                          {(bem.origem === 'DOACAO' || bem.origem === 'Doacao') && 
+                              <span style={{background: '#2563eb', color:'white', padding:'4px 10px', borderRadius:'12px', fontSize:'11px', fontWeight:'bold', textTransform:'uppercase'}}>DOAÇÃO</span>
+                          }
+                          {(bem.origem !== 'ALUGADO' && bem.origem !== 'Alugado' && bem.origem !== 'DOACAO' && bem.origem !== 'Doacao') && 
+                              <span style={{color: '#64748b', fontSize:'12px', fontWeight:'500'}}>Próprio</span>
+                          }
+                        </td>
+                        <td>{bem.situacao}</td>
+                        <td>{bem.estado_conservacao}</td>
+                        <td>
+                          {bem.data_baixa ? 
+                              <span style={{color:'red', fontWeight:'bold', fontSize:'12px'}}>BAIXADO</span> 
+                              : <span style={{color:'green', fontWeight:'bold', fontSize:'12px'}}>ATIVO</span>}
+                        </td>
+                        <td>
+                          <button 
                             onClick={() => abrirModal(bem)}
                             style={{fontSize: '12px', padding: '5px 10px', cursor:'pointer', background: '#e2e8f0', border:'1px solid #cbd5e1', borderRadius:'4px', display: 'flex', alignItems: 'center', gap: '5px'}}
-                        >
+                          >
                             <FaEdit /> Editar
-                        </button>
-                    </td>
-                  </tr>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>

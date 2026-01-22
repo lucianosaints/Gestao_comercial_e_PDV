@@ -97,7 +97,7 @@ function Bens() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: '2px solid #eee', textAlign: 'left', backgroundColor: '#f9fafb' }}>
-                  <th style={{ padding: '12px' }}>Tombo</th>
+                  <th style={{ padding: '12px' }}>Número de Série</th> {/* <--- Este cabeçalho */}
                   <th style={{ padding: '12px' }}>Nome</th>
                   <th style={{ padding: '12px' }}>Localização</th>
                   <th style={{ padding: '12px' }}>Situação</th>

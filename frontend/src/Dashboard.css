@@ -147,3 +147,34 @@
   }
   .dashboard-bottom { grid-template-columns: 1fr; }
 }
+
+/* =========================================
+   BOTÃO DE CÓDIGO DE BARRAS (Novo Visual)
+   ========================================= */
+.btn-barcode {
+  background: linear-gradient(135deg, #6366f1 0%, #3b82f6 100%); /* Gradiente Roxo-Azul */
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 12px 28px;
+  border: none;
+  border-radius: 50px; /* Formato de Pílula (arredondado) */
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px; /* Espaço entre ícone e texto */
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4); /* Sombra colorida brilhante */
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn-barcode:hover {
+  transform: translateY(-3px); /* Sobe um pouquinho */
+  box-shadow: 0 8px 25px rgba(99, 102, 241, 0.5); /* Sombra aumenta */
+  background: linear-gradient(135deg, #4f46e5 0%, #2563eb 100%);
+}
+
+.btn-barcode:active {
+  transform: translateY(1px); /* Efeito de clique */
+}
