@@ -70,6 +70,13 @@ class BemViewSet(viewsets.ModelViewSet):
     serializer_class = BemSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    def get_queryset(self):
+        queryset = Bem.objects.all()
+        sala_id = self.request.query_params.get('sala')
+        if sala_id:
+            queryset = queryset.filter(sala_id=sala_id)
+        return queryset
+
     # --- LÓGICA DE RASTREAMENTO (HISTÓRICO) ---
     def perform_update(self, serializer):
         # 1. Pega os dados ANTIGOS (antes de salvar)

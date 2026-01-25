@@ -1,39 +1,41 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import './Dashboard.css';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
-import { FaBox, FaBuilding, FaTags, FaDollarSign, FaBarcode } from 'react-icons/fa'; // <--- Adicionei FaBarcode aqui
+import { FaBox, FaBuilding, FaTags, FaDollarSign, FaBarcode, FaBars } from 'react-icons/fa'; // <--- Adicionei FaBarcode e FaBars aqui
 
 function Dashboard() {
   const navigate = useNavigate();
+  const location = useLocation(); // Adicionado useLocation
   const [bens, setBens] = useState([]);
   const [unidades, setUnidades] = useState([]);
   const [categorias, setCategorias] = useState([]);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true); // Inicializa sempre recolhido
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(window.innerWidth < 768); // Inicializa recolhido se for mobile
 
   console.log('Dashboard rendered. isSidebarCollapsed state:', isSidebarCollapsed);
 
   const toggleSidebar = () => {
-    setIsSidebarCollapsed(!isSidebarCollapsed);
-    console.log('toggleSidebar called. New isSidebarCollapsed:', !isSidebarCollapsed);
+    setIsSidebarCollapsed(prevState => !prevState);
   };
+
+  useEffect(() => {
+    if (window.innerWidth < 768) {
+      setIsSidebarCollapsed(true);
+    }
+  }, [location]);
 
   useEffect(() => {
     const handleResize = () => {
       const currentWidth = window.innerWidth;
-      console.log('handleResize called. Current window width:', currentWidth);
       if (currentWidth < 768) {
-        setIsSidebarCollapsed(true); // Recolhe se for mobile
-        console.log('Setting isSidebarCollapsed to true (mobile)');
+        setIsSidebarCollapsed(true);
       } else {
-        setIsSidebarCollapsed(false); // Expande se for desktop
-        console.log('Setting isSidebarCollapsed to false (desktop)');
+        setIsSidebarCollapsed(false);
       }
     };
 
-    handleResize(); // Chama a função uma vez na montagem do componente
     window.addEventListener('resize', handleResize);
     return () => {
       window.removeEventListener('resize', handleResize);
@@ -106,6 +108,15 @@ function Dashboard() {
       <Sidebar isCollapsed={isSidebarCollapsed} toggleCollapse={toggleSidebar} />
       
       <main className={`content ${isSidebarCollapsed ? 'content-expanded' : ''}`}>
+        {/* Botão de hambúrguer para mobile */}
+        {!isSidebarCollapsed && window.innerWidth < 768 && (
+          <div className="overlay" onClick={toggleSidebar}></div>
+        )}
+        {isSidebarCollapsed && window.innerWidth < 768 && (
+          <button onClick={toggleSidebar} className="mobile-menu-btn">
+            <FaBars />
+          </button>
+        )}
         
         {/* CABEÇALHO COM O NOVO BOTÃO */}
         <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
