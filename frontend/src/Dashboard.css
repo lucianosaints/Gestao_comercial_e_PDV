@@ -180,6 +180,53 @@
   .dashboard-bottom { grid-template-columns: 1fr; }
 }
 
+/* Estilos para o botão de menu mobile */
+.mobile-menu-btn {
+    display: none; /* Esconde por padrão */
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    z-index: 1001; /* Acima do sidebar */
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+/* Overlay para quando o sidebar mobile estiver aberto */
+.overlay {
+    display: none; /* Esconde por padrão */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999; /* Abaixo do sidebar, mas acima do conteúdo */
+}
+
+@media (max-width: 767px) {
+    .mobile-menu-btn {
+        display: block; /* Mostra o botão de hambúrguer em mobile */
+    }
+
+    .dashboard-container.sidebar-collapsed .mobile-menu-btn {
+        left: 15px; /* Posição quando o sidebar está recolhido */
+    }
+
+    .dashboard-container .overlay {
+        display: block; /* Mostra o overlay quando o sidebar está expandido */
+    }
+    
+    .dashboard-container.sidebar-collapsed .overlay {
+        display: none; /* Esconde o overlay quando o sidebar está recolhido */
+    }
+}
+
 /* =========================================
    BOTÃO DE CÓDIGO DE BARRAS (Novo Visual)
    ========================================= */

@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import { FaSearch, FaArrowLeft, FaEdit, FaTimes } from 'react-icons/fa';
+import { FaSearch, FaArrowLeft, FaEdit, FaTimes, FaBars } from 'react-icons/fa';
 import './Dashboard.css';
 
 function UnidadeDetalhes() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   
   const [bens, setBens] = useState([]);
   const [filtro, setFiltro] = useState('');
@@ -24,32 +25,98 @@ function UnidadeDetalhes() {
   });
 
   const [salaSelecionada, setSalaSelecionada] = useState('todas'); // estado para filtrar por sala
-
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(window.innerWidth < 768); // Inicializa recolhido se for mobile
 
   const toggleSidebar = () => {
-    setIsSidebarCollapsed(!isSidebarCollapsed);
+    console.log('toggleSidebar called. Current isSidebarCollapsed:', isSidebarCollapsed);
+    setIsSidebarCollapsed(prevState => !prevState);
+    console.log('toggleSidebar called. New isSidebarCollapsed:', !isSidebarCollapsed);
   };
 
   useEffect(() => {
-    carregarBens();
-    const token = localStorage.getItem('access_token');
-    axios.get(`http://127.0.0.1:8000/api/unidades/${id}/`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-    }).then(res => setNomeUnidade(res.data.nome));
-  }, [id]);
+    console.log('Location changed in UnidadeDetalhes. Current isSidebarCollapsed:', isSidebarCollapsed);
+    // Fecha a sidebar em mobile quando a rota muda
+    if (window.innerWidth < 768) {
+      setIsSidebarCollapsed(true);
+      console.log('Location changed on mobile in UnidadeDetalhes. Setting isSidebarCollapsed to true.');
+    }
+  }, [location, isSidebarCollapsed]);
 
-  const carregarBens = () => {
+  useEffect(() => {
+    const handleResize = () => {
+      const currentWidth = window.innerWidth;
+      console.log('handleResize called in UnidadeDetalhes. Current window.innerWidth:', currentWidth);
+      if (currentWidth < 768) {
+        setIsSidebarCollapsed(true); // Recolhe se for mobile
+        console.log('handleResize: Setting isSidebarCollapsed to true for mobile in UnidadeDetalhes.');
+      } else {
+        setIsSidebarCollapsed(false); // Expande se for desktop
+        console.log('handleResize: Setting isSidebarCollapsed to false for desktop in UnidadeDetalhes.');
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  useEffect(() => {
+    console.log('salaSelecionada changed in UnidadeDetalhes. Current salaSelecionada:', salaSelecionada);
+    // Recolhe a sidebar em mobile quando a sala selecionada muda
+    if (window.innerWidth < 768) {
+      setIsSidebarCollapsed(true);
+      console.log('salaSelecionada changed on mobile in UnidadeDetalhes. Setting isSidebarCollapsed to true.');
+    }
+  }, [salaSelecionada]);
+
+  const carregarBens = useCallback(async () => {
     const token = localStorage.getItem('access_token');
-    axios.get('http://127.0.0.1:8000/api/bens/', {
+    if (!token) {
+      console.error("Token de acesso não encontrado.");
+      navigate('/login');
+      return;
+    }
+    try {
+      const response = await axios.get('http://127.0.0.1:8000/api/bens/', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      console.log("Dados brutos da API de bens:", response.data); // Novo log
+      console.log("ID da unidade para filtragem:", id); // Novo log
+      response.data.forEach(bem => {
+        console.log(`Bem unidade: ${bem.unidade}, Tipo: ${typeof bem.unidade}`);
+      });
+      console.log(`ID do parâmetro: ${id}, Tipo: ${typeof id}`);
+      // Filtra apenas os bens desta unidade
+      const bensDaUnidade = response.data.filter(bem => bem.unidade === parseInt(id));
+      setBens(bensDaUnidade);
+      console.log("Bens carregados:", bensDaUnidade); // Debug no console
+    } catch (error) {
+      console.error("Erro ao carregar bens:", error);
+      // Tratar erro, talvez exibir uma mensagem para o usuário
+    }
+  }, [id, navigate]);
+
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
+    axios.get(`http://127.0.0.1:8000/api/unidades/${id}/`, {
       headers: { 'Authorization': `Bearer ${token}` }
-    }).then(response => {
-        // Filtra apenas os bens desta unidade
-        const bensDaUnidade = response.data.filter(bem => bem.unidade == id);
-        setBens(bensDaUnidade);
-        console.log("Bens carregados:", bensDaUnidade); // Debug no console
+    })
+    .then(response => {
+      setNomeUnidade(response.data.nome);
+    })
+    .catch(error => {
+      console.error("Erro ao carregar nome da unidade:", error);
+      setNomeUnidade('Erro ao carregar');
     });
-  };
+
+    carregarBens();
+  }, [id, navigate, carregarBens]);
 
   const abrirModal = (bem) => {
     setBemEditando(bem);
@@ -65,6 +132,11 @@ function UnidadeDetalhes() {
   const salvarEdicao = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem('access_token');
+    if (!token) {
+      console.error("Token de acesso não encontrado.");
+      navigate('/login');
+      return;
+    }
     
     const dadosParaEnviar = {
         ...editForm,
@@ -95,24 +167,43 @@ function UnidadeDetalhes() {
   // Agrupa bens por sala, considerando a sala selecionada
   const bensAgrupados = () => {
     const agrupamento = {};
+    console.log('bensAgrupados: salaSelecionada:', salaSelecionada);
+    console.log('bensAgrupados: bensFiltrados:', bensFiltrados);
 
     bensFiltrados.forEach(bem => {
-      if (salaSelecionada !== 'todas' && (bem.sala || 'Sem Sala') !== salaSelecionada) return;
+      const bemSala = bem.sala || 'Sem Sala';
+      console.log('bensAgrupados: Processando bem:', bem.nome, 'Sala do bem:', bemSala);
 
-      const nomeSala = 'Sala ' + bem.sala_nome || 'Sem Sala';
-      if (!agrupamento[nomeSala]) agrupamento[nomeSala] = [];
+      if (salaSelecionada !== 'todas' && bemSala !== salaSelecionada) {
+        console.log('bensAgrupados: Bem ignorado devido à sala selecionada.');
+        return;
+      }
+
+      const nomeSala = bem.sala_nome ? `Sala ${bem.sala_nome}` : 'Sem Sala';
+      if (!agrupamento[nomeSala]) {
+        agrupamento[nomeSala] = [];
+      }
       agrupamento[nomeSala].push(bem);
     });
-
+    console.log('bensAgrupados: Agrupamento final:', agrupamento);
     return agrupamento;
   };
 
   const bensPorSala = bensAgrupados();
 
   return (
-    <div className="dashboard-container">
+    <div className={`dashboard-container ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
       <Sidebar isCollapsed={isSidebarCollapsed} toggleCollapse={toggleSidebar} />
-      <main className="content" style={{position: 'relative'}}>
+      <main className={`content ${isSidebarCollapsed ? 'content-expanded' : ''}`} style={{position: 'relative'}}>
+        {/* Botão de hambúrguer para mobile */}
+        {!isSidebarCollapsed && window.innerWidth < 768 && (
+          <div className="overlay" onClick={toggleSidebar}></div>
+        )}
+        {isSidebarCollapsed && window.innerWidth < 768 && (
+          <button onClick={toggleSidebar} className="mobile-menu-btn">
+            <FaBars />
+          </button>
+        )}
         
         <div style={{display: 'flex', alignItems: 'center', marginBottom: '20px'}}>
             <button onClick={() => navigate('/unidades')} style={{marginRight: '15px', padding: '8px', cursor: 'pointer', border:'none', background:'#ddd', borderRadius:'5px'}}>
@@ -136,25 +227,31 @@ function UnidadeDetalhes() {
 
         {/* Botões de salas */}
         <div style={{marginBottom: '10px'}}>
-          <button 
-            onClick={() => setSalaSelecionada('todas')}
+          <button
+            onClick={() => {
+              console.log('Botão "Todas" clicado. Definindo salaSelecionada para:', 'todas');
+              setSalaSelecionada('todas');
+            }}
             style={{
-              marginRight: '5px', padding:'5px 10px', 
-              background: salaSelecionada === 'todas' ? '#2563eb' : '#e2e8f0', 
-              color: salaSelecionada === 'todas' ? 'white' : 'black', 
+              marginRight: '5px', padding:'5px 10px',
+              background: salaSelecionada === 'todas' ? '#2563eb' : '#e2e8f0',
+              color: salaSelecionada === 'todas' ? 'white' : 'black',
               border:'none', borderRadius:'4px', cursor:'pointer'}}
-            
+
           >
             Todas
           </button>
           {salas.map((sala, idx) => (
             <button
               key={idx}
-              onClick={() => setSalaSelecionada(sala)}
+              onClick={() => {
+                console.log('Botão de sala clicado. Definindo salaSelecionada para:', sala);
+                setSalaSelecionada(sala);
+              }}
               style={{
-                marginRight: '5px', padding:'5px 10px', 
-                background: salaSelecionada === sala ? '#2563eb' : '#e2e8f0', 
-                color: salaSelecionada === sala ? 'white' : 'black', 
+                marginRight: '5px', padding:'5px 10px',
+                background: salaSelecionada === sala ? '#2563eb' : '#e2e8f0',
+                color: salaSelecionada === sala ? 'white' : 'black',
                 border:'none', borderRadius:'4px', cursor:'pointer'
               }}
             >
