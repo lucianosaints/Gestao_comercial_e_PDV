@@ -1,98 +1,92 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import Sidebar from './Sidebar';
-import './Dashboard.css';
-import './AddBem.css';
+import Sidebar from './Sidebar'; // Verifique se o caminho está ./Sidebar ou ./components/Sidebar
+import { FaStore, FaSave, FaArrowLeft } from 'react-icons/fa';
 
 function AddUnidade() {
   const navigate = useNavigate();
-  
-  const [formData, setFormData] = useState({
-    nome: '',
-    endereco: ''
-  });
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false); // Adicionar estado para o sidebar
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(window.innerWidth < 768);
+  const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
+  // Estados do Formulário
+  const [nome, setNome] = useState('');
+  const [endereco, setEndereco] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // 1. Recupera o token salvo no navegador (o seu "crachá")
     const token = localStorage.getItem('access_token');
-
+    
     try {
-      // 2. Envia o token no cabeçalho (headers) da requisição
-      await axios.post('http://127.0.0.1:8000/api/unidades/', formData, {
-        headers: {
-          'Authorization': `Bearer ${token}`, // Importante: Bearer + token
-          'Content-Type': 'application/json'
-        }
-      });
-
-      alert('Unidade cadastrada com sucesso!');
-      navigate('/unidades'); 
+      await axios.post('http://127.0.0.1:8000/api/unidades/', 
+        { nome, endereco }, 
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert('Nova Loja cadastrada com sucesso!');
+      navigate('/unidades'); // Volta para a lista de lojas
     } catch (error) {
-      console.error('Erro ao cadastrar unidade:', error);
-      // Mostra uma mensagem mais clara se for erro de permissão
-      if (error.response && error.response.status === 401) {
-        alert('Erro de Permissão: Seu login expirou ou não foi enviado. Tente logar novamente.');
-      } else {
-        alert('Erro ao salvar. Verifique o console para mais detalhes.');
-      }
+      console.error(error);
+      alert('Erro ao salvar loja. Verifique os dados.');
     }
   };
 
-  // Função para alternar o estado do sidebar
-  const toggleSidebar = () => {
-    setIsSidebarCollapsed(!isSidebarCollapsed);
+  // --- ESTILOS ---
+  const s = {
+    container: { display: 'flex', minHeight: '100vh', backgroundColor: '#f3f4f6' },
+    main: { 
+      flex: 1, 
+      marginLeft: isSidebarCollapsed ? '80px' : '260px', 
+      padding: '30px', 
+      transition: 'margin-left 0.3s ease' 
+    },
+    card: {
+      backgroundColor: 'white', padding: '30px', borderRadius: '12px', 
+      boxShadow: '0 4px 6px rgba(0,0,0,0.05)', maxWidth: '600px', margin: '0 auto'
+    },
+    label: { display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#374151', fontSize: '14px' },
+    input: { width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #d1d5db', marginBottom: '20px', fontSize:'15px' }
   };
 
   return (
-    <div className="dashboard-container">
+    <div style={s.container}>
       <Sidebar isCollapsed={isSidebarCollapsed} toggleCollapse={toggleSidebar} />
       
-      <main className="content">
-        <header>
-          <h1>Nova Unidade</h1>
-          <p>Preencha os dados abaixo para cadastrar uma nova filial.</p>
-        </header>
-
-        <div className="panel form-panel">
-          <h3>Cadastrar Unidade</h3>
-          
-          <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label>Nome da Unidade</label>
-              <input 
-                type="text" 
-                name="nome" 
-                value={formData.nome} 
-                onChange={handleChange} 
-                placeholder="Ex: Matriz - São Paulo" 
-                required 
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Endereço</label>
-              <input 
-                type="text" 
-                name="endereco" 
-                value={formData.endereco} 
-                onChange={handleChange} 
-                placeholder="Ex: Av. Paulista, 1000" 
-                required 
-              />
-            </div>
-
-            <button type="submit" className="btn-save">Salvar Unidade</button>
-          </form>
+      <main style={s.main}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', maxWidth:'600px', margin:'0 auto 25px auto' }}>
+            <h1 style={{margin: 0, color:'#1f2937', display:'flex', alignItems:'center', gap:'10px'}}>
+                <FaStore style={{color:'#2563eb'}}/> Nova Loja / Filial
+            </h1>
+            <button onClick={() => navigate('/unidades')} style={{background: '#6b7280', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px'}}>
+                <FaArrowLeft /> Voltar
+            </button>
         </div>
+
+        <form onSubmit={handleSubmit} style={s.card}>
+            <label style={s.label}>Nome da Loja</label>
+            <input 
+                type="text" 
+                required 
+                value={nome} 
+                onChange={e => setNome(e.target.value)} 
+                placeholder="Ex: Matriz, Filial Centro..."
+                style={s.input}
+            />
+
+            <label style={s.label}>Endereço</label>
+            <input 
+                type="text" 
+                value={endereco} 
+                onChange={e => setEndereco(e.target.value)} 
+                placeholder="Rua, Número, Bairro..."
+                style={s.input}
+            />
+
+            <div style={{marginTop:'10px', display:'flex', justifyContent:'flex-end'}}>
+                <button type="submit" style={{background: '#2563eb', color: 'white', border: 'none', padding: '12px 25px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px'}}>
+                    <FaSave /> Salvar Loja
+                </button>
+            </div>
+        </form>
       </main>
     </div>
   );

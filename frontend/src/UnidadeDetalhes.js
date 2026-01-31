@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import { FaSearch, FaArrowLeft, FaEdit, FaTimes, FaBars } from 'react-icons/fa';
+import { FaSearch, FaArrowLeft, FaEdit, FaTimes, FaBars, FaBarcode, FaBox, FaDollarSign, FaSortAmountUp } from 'react-icons/fa';
 import './Dashboard.css';
 
 function UnidadeDetalhes() {
@@ -24,34 +24,26 @@ function UnidadeDetalhes() {
     obs_baixa: ''
   });
 
-  const [salaSelecionada, setSalaSelecionada] = useState('todas'); // estado para filtrar por sala
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(window.innerWidth < 768); // Inicializa recolhido se for mobile
+  const [salaSelecionada, setSalaSelecionada] = useState('todas'); 
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(window.innerWidth < 768); 
 
   const toggleSidebar = () => {
-    console.log('toggleSidebar called. Current isSidebarCollapsed:', isSidebarCollapsed);
     setIsSidebarCollapsed(prevState => !prevState);
-    console.log('toggleSidebar called. New isSidebarCollapsed:', !isSidebarCollapsed);
   };
 
   useEffect(() => {
-    console.log('Location changed in UnidadeDetalhes. Current isSidebarCollapsed:', isSidebarCollapsed);
-    // Fecha a sidebar em mobile quando a rota muda
     if (window.innerWidth < 768) {
       setIsSidebarCollapsed(true);
-      console.log('Location changed on mobile in UnidadeDetalhes. Setting isSidebarCollapsed to true.');
     }
-  }, [location, isSidebarCollapsed]);
+  }, [location]);
 
   useEffect(() => {
     const handleResize = () => {
       const currentWidth = window.innerWidth;
-      console.log('handleResize called in UnidadeDetalhes. Current window.innerWidth:', currentWidth);
       if (currentWidth < 768) {
-        setIsSidebarCollapsed(true); // Recolhe se for mobile
-        console.log('handleResize: Setting isSidebarCollapsed to true for mobile in UnidadeDetalhes.');
+        setIsSidebarCollapsed(true); 
       } else {
-        setIsSidebarCollapsed(false); // Expande se for desktop
-        console.log('handleResize: Setting isSidebarCollapsed to false for desktop in UnidadeDetalhes.');
+        setIsSidebarCollapsed(false); 
       }
     };
 
@@ -61,19 +53,9 @@ function UnidadeDetalhes() {
     };
   }, []);
 
-  useEffect(() => {
-    console.log('salaSelecionada changed in UnidadeDetalhes. Current salaSelecionada:', salaSelecionada);
-    // Recolhe a sidebar em mobile quando a sala selecionada muda
-    if (window.innerWidth < 768) {
-      setIsSidebarCollapsed(true);
-      console.log('salaSelecionada changed on mobile in UnidadeDetalhes. Setting isSidebarCollapsed to true.');
-    }
-  }, [salaSelecionada]);
-
   const carregarBens = useCallback(async () => {
     const token = localStorage.getItem('access_token');
     if (!token) {
-      console.error("Token de acesso não encontrado.");
       navigate('/login');
       return;
     }
@@ -81,19 +63,11 @@ function UnidadeDetalhes() {
       const response = await axios.get('http://127.0.0.1:8000/api/bens/', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      console.log("Dados brutos da API de bens:", response.data); // Novo log
-      console.log("ID da unidade para filtragem:", id); // Novo log
-      response.data.forEach(bem => {
-        console.log(`Bem unidade: ${bem.unidade}, Tipo: ${typeof bem.unidade}`);
-      });
-      console.log(`ID do parâmetro: ${id}, Tipo: ${typeof id}`);
-      // Filtra apenas os bens desta unidade
+      // Filtra apenas os produtos desta loja (unidade)
       const bensDaUnidade = response.data.filter(bem => bem.unidade === parseInt(id));
       setBens(bensDaUnidade);
-      console.log("Bens carregados:", bensDaUnidade); // Debug no console
     } catch (error) {
-      console.error("Erro ao carregar bens:", error);
-      // Tratar erro, talvez exibir uma mensagem para o usuário
+      console.error("Erro ao carregar produtos:", error);
     }
   }, [id, navigate]);
 
@@ -111,8 +85,8 @@ function UnidadeDetalhes() {
       setNomeUnidade(response.data.nome);
     })
     .catch(error => {
-      console.error("Erro ao carregar nome da unidade:", error);
-      setNomeUnidade('Erro ao carregar');
+      console.error("Erro ao carregar nome da loja:", error);
+      setNomeUnidade('Loja não encontrada');
     });
 
     carregarBens();
@@ -132,11 +106,6 @@ function UnidadeDetalhes() {
   const salvarEdicao = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem('access_token');
-    if (!token) {
-      console.error("Token de acesso não encontrado.");
-      navigate('/login');
-      return;
-    }
     
     const dadosParaEnviar = {
         ...editForm,
@@ -147,7 +116,7 @@ function UnidadeDetalhes() {
         await axios.patch(`http://127.0.0.1:8000/api/bens/${bemEditando.id}/`, dadosParaEnviar, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        alert('Bem atualizado com sucesso!');
+        alert('Produto atualizado com sucesso!');
         setModalAberto(false);
         carregarBens(); 
     } catch (error) {
@@ -161,31 +130,25 @@ function UnidadeDetalhes() {
     bem.tombo.includes(filtro)
   );
 
-  // Lista de salas únicas
-  const salas = Array.from(new Set(bensFiltrados.map(bem => bem.sala || 'Sem Sala')));
+  // Lista de locais/seções únicas
+  const salas = Array.from(new Set(bensFiltrados.map(bem => bem.sala_nome || 'Estoque Geral')));
 
-  // Agrupa bens por sala, considerando a sala selecionada
   const bensAgrupados = () => {
     const agrupamento = {};
-    console.log('bensAgrupados: salaSelecionada:', salaSelecionada);
-    console.log('bensAgrupados: bensFiltrados:', bensFiltrados);
 
     bensFiltrados.forEach(bem => {
-      const bemSala = bem.sala || 'Sem Sala';
-      console.log('bensAgrupados: Processando bem:', bem.nome, 'Sala do bem:', bemSala);
+      const nomeSala = bem.sala_nome || 'Estoque Geral'; // Nome visual da seção
 
-      if (salaSelecionada !== 'todas' && bemSala !== salaSelecionada) {
-        console.log('bensAgrupados: Bem ignorado devido à sala selecionada.');
+      // Lógica de filtro por aba (botão)
+      if (salaSelecionada !== 'todas' && nomeSala !== salaSelecionada) {
         return;
       }
 
-      const nomeSala = bem.sala_nome ? `Sala ${bem.sala_nome}` : 'Sem Sala';
       if (!agrupamento[nomeSala]) {
         agrupamento[nomeSala] = [];
       }
       agrupamento[nomeSala].push(bem);
     });
-    console.log('bensAgrupados: Agrupamento final:', agrupamento);
     return agrupamento;
   };
 
@@ -195,7 +158,7 @@ function UnidadeDetalhes() {
     <div className={`dashboard-container ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
       <Sidebar isCollapsed={isSidebarCollapsed} toggleCollapse={toggleSidebar} />
       <main className={`content ${isSidebarCollapsed ? 'content-expanded' : ''}`} style={{position: 'relative'}}>
-        {/* Botão de hambúrguer para mobile */}
+        
         {!isSidebarCollapsed && window.innerWidth < 768 && (
           <div className="overlay" onClick={toggleSidebar}></div>
         )}
@@ -206,53 +169,50 @@ function UnidadeDetalhes() {
         )}
         
         <div style={{display: 'flex', alignItems: 'center', marginBottom: '20px'}}>
-            <button onClick={() => navigate('/unidades')} style={{marginRight: '15px', padding: '8px', cursor: 'pointer', border:'none', background:'#ddd', borderRadius:'5px'}}>
+            <button onClick={() => navigate('/unidades')} style={{marginRight: '15px', padding: '8px 12px', cursor: 'pointer', border:'none', background:'#e2e8f0', borderRadius:'5px', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold', color: '#333'}}>
                 <FaArrowLeft /> Voltar
             </button>
             <div>
-                <h1 style={{margin:0}}>{nomeUnidade}</h1>
+                <h1 style={{margin:0, fontSize: '24px'}}>{nomeUnidade}</h1>
+                <p style={{margin:0, color: '#666', fontSize: '14px'}}>Gestão de estoque da filial</p>
             </div>
         </div>
 
-        <div className="panel" style={{marginBottom: '20px', display: 'flex', alignItems: 'center', padding: '15px'}}>
-            <FaSearch style={{marginRight: '10px', color: '#666'}} />
+        <div className="panel" style={{marginBottom: '20px', display: 'flex', alignItems: 'center', padding: '15px', background: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)'}}>
+            <FaSearch style={{marginRight: '10px', color: '#007bff'}} />
             <input 
                 type="text" 
-                placeholder="Filtrar por nome ou nº de patrimônio..." 
+                placeholder="Filtrar por nome ou Código de Barras..." 
                 value={filtro}
                 onChange={(e) => setFiltro(e.target.value)}
                 style={{border: 'none', width: '100%', outline: 'none', fontSize: '16px'}}
             />
         </div>
 
-        {/* Botões de salas */}
-        <div style={{marginBottom: '10px'}}>
+        {/* Botões de Filtro por Seção/Local */}
+        <div style={{marginBottom: '15px', display: 'flex', gap: '5px', flexWrap: 'wrap'}}>
           <button
-            onClick={() => {
-              console.log('Botão "Todas" clicado. Definindo salaSelecionada para:', 'todas');
-              setSalaSelecionada('todas');
-            }}
+            onClick={() => setSalaSelecionada('todas')}
             style={{
-              marginRight: '5px', padding:'5px 10px',
-              background: salaSelecionada === 'todas' ? '#2563eb' : '#e2e8f0',
-              color: salaSelecionada === 'todas' ? 'white' : 'black',
-              border:'none', borderRadius:'4px', cursor:'pointer'}}
-
+              padding:'6px 12px',
+              background: salaSelecionada === 'todas' ? '#007bff' : 'white',
+              color: salaSelecionada === 'todas' ? 'white' : '#555',
+              border: salaSelecionada === 'todas' ? 'none' : '1px solid #ddd',
+              borderRadius:'20px', cursor:'pointer', fontWeight: '500'
+            }}
           >
-            Todas
+            Todos os Itens
           </button>
           {salas.map((sala, idx) => (
             <button
               key={idx}
-              onClick={() => {
-                console.log('Botão de sala clicado. Definindo salaSelecionada para:', sala);
-                setSalaSelecionada(sala);
-              }}
+              onClick={() => setSalaSelecionada(sala)}
               style={{
-                marginRight: '5px', padding:'5px 10px',
-                background: salaSelecionada === sala ? '#2563eb' : '#e2e8f0',
-                color: salaSelecionada === sala ? 'white' : 'black',
-                border:'none', borderRadius:'4px', cursor:'pointer'
+                padding:'6px 12px',
+                background: salaSelecionada === sala ? '#007bff' : 'white',
+                color: salaSelecionada === sala ? 'white' : '#555',
+                border: salaSelecionada === sala ? 'none' : '1px solid #ddd',
+                borderRadius:'20px', cursor:'pointer', fontWeight: '500'
               }}
             >
               {sala}
@@ -260,62 +220,88 @@ function UnidadeDetalhes() {
           ))}
         </div>
 
-        <div className="panel table-panel">
-            <table className="custom-table">
+        <div className="panel table-panel" style={{background: 'white', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.1)'}}>
+            <table className="custom-table" style={{width: '100%', borderCollapse: 'collapse'}}>
               <thead>
-                <tr>
-                  <th>Tombo</th>
-                  <th>Bem</th>
-                  <th>Origem</th>
-                  <th>Situação</th>
-                  <th>Estado</th>
-                  <th>Status</th>
-                  <th>Ações</th>
+                <tr style={{background: '#f8f9fa', color: '#333'}}>
+                  <th style={{padding: '12px', textAlign: 'left'}}><FaBarcode /> Cód. Barras / SKU</th>
+                  <th style={{padding: '12px', textAlign: 'left'}}><FaBox /> Produto</th>
+                  <th style={{padding: '12px', textAlign: 'left'}}>Origem</th>
+                  <th style={{padding: '12px', textAlign: 'left'}}><FaDollarSign /> Preço (R$)</th>
+                  <th style={{padding: '12px', textAlign: 'center'}}><FaSortAmountUp /> Qtd. Estoque</th>
+                  <th style={{padding: '12px', textAlign: 'center'}}>Status</th>
+                  <th style={{padding: '12px', textAlign: 'center'}}>Ações</th>
                 </tr>
               </thead>
               <tbody>
-                {Object.keys(bensPorSala).map((salaNome, indexSala) => (
-                  <React.Fragment key={indexSala}>
-                    {/* Linha de título da sala */}
-                    <tr style={{background: '#93d8eb', fontWeight: 'bold'}}> 
-                      <td colSpan="7">{salaNome}</td>
+                {Object.keys(bensPorSala).length === 0 ? (
+                    <tr>
+                        <td colSpan="7" style={{textAlign: 'center', padding: '30px', color: '#999'}}>Nenhum produto encontrado nesta seção.</td>
                     </tr>
+                ) : (
+                    Object.keys(bensPorSala).map((salaNome, indexSala) => (
+                      <React.Fragment key={indexSala}>
+                        {/* Linha divisória da Seção */}
+                        <tr style={{background: '#e0f2fe', fontWeight: 'bold', color: '#0369a1'}}> 
+                          <td colSpan="7" style={{padding: '8px 15px'}}>📂 Local: {salaNome}</td>
+                        </tr>
 
-                    {/* Linhas dos bens dessa sala */}
-                    {bensPorSala[salaNome].map(bem => (
-                      <tr key={bem.id} style={{ opacity: bem.data_baixa ? 0.6 : 1, background: bem.data_baixa ? '#f8f8f8' : 'white' }}>
-                        <td><strong>{bem.tombo}</strong></td>
-                        <td>{bem.nome}</td>
-                        <td>
-                          {(bem.origem === 'ALUGADO' || bem.origem === 'Alugado') && 
-                              <span style={{background: '#d97706', color:'white', padding:'4px 10px', borderRadius:'12px', fontSize:'11px', fontWeight:'bold', textTransform:'uppercase'}}>ALUGADO</span>
-                          }
-                          {(bem.origem === 'DOACAO' || bem.origem === 'Doacao') && 
-                              <span style={{background: '#2563eb', color:'white', padding:'4px 10px', borderRadius:'12px', fontSize:'11px', fontWeight:'bold', textTransform:'uppercase'}}>DOAÇÃO</span>
-                          }
-                          {(bem.origem !== 'ALUGADO' && bem.origem !== 'Alugado' && bem.origem !== 'DOACAO' && bem.origem !== 'Doacao') && 
-                              <span style={{color: '#64748b', fontSize:'12px', fontWeight:'500'}}>Próprio</span>
-                          }
-                        </td>
-                        <td>{bem.situacao}</td>
-                        <td>{bem.estado_conservacao}</td>
-                        <td>
-                          {bem.data_baixa ? 
-                              <span style={{color:'red', fontWeight:'bold', fontSize:'12px'}}>BAIXADO</span> 
-                              : <span style={{color:'green', fontWeight:'bold', fontSize:'12px'}}>ATIVO</span>}
-                        </td>
-                        <td>
-                          <button 
-                            onClick={() => abrirModal(bem)}
-                            style={{fontSize: '12px', padding: '5px 10px', cursor:'pointer', background: '#e2e8f0', border:'1px solid #cbd5e1', borderRadius:'4px', display: 'flex', alignItems: 'center', gap: '5px'}}
-                          >
-                            <FaEdit /> Editar
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </React.Fragment>
-                ))}
+                        {bensPorSala[salaNome].map(bem => (
+                          <tr key={bem.id} style={{ opacity: bem.data_baixa ? 0.6 : 1, background: bem.data_baixa ? '#f9fafb' : 'white', borderBottom: '1px solid #eee' }}>
+                            {/* COLUNA 1: CÓDIGO */}
+                            <td style={{padding: '12px', fontFamily: 'monospace', fontSize: '14px', color: '#555'}}>
+                                <strong>{bem.tombo}</strong>
+                            </td>
+                            
+                            {/* COLUNA 2: NOME */}
+                            <td style={{padding: '12px', fontWeight: '500'}}>{bem.nome}</td>
+                            
+                            {/* COLUNA 3: ORIGEM */}
+                            <td style={{padding: '12px', fontSize: '12px', color: '#666'}}>
+                                {bem.origem === 'PROPRIO' ? 'Loja' : bem.origem}
+                            </td>
+
+                            {/* COLUNA 4: PREÇO */}
+                            <td style={{padding: '12px', color: '#16a34a', fontWeight: 'bold'}}>
+                                R$ {bem.valor ? parseFloat(bem.valor).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : '0,00'}
+                            </td>
+
+                            {/* COLUNA 5: QUANTIDADE */}
+                            <td style={{padding: '12px', textAlign: 'center', fontWeight: 'bold', fontSize: '15px'}}>
+                                {bem.quantidade || 0}
+                            </td>
+
+                            {/* COLUNA 6: STATUS (CORRIGIDA) */}
+                            <td style={{padding: '12px', textAlign: 'center'}}>
+                              {bem.data_baixa ? (
+                                  <span style={{background:'#fee2e2', color:'#dc2626', padding:'4px 8px', borderRadius:'4px', fontSize:'11px', fontWeight:'bold'}}>
+                                    VENDIDO/BAIXADO
+                                  </span>
+                              ) : bem.quantidade > 0 ? (
+                                  <span style={{background:'#dcfce7', color:'#16a34a', padding:'4px 8px', borderRadius:'4px', fontSize:'11px', fontWeight:'bold'}}>
+                                    EM ESTOQUE
+                                  </span>
+                              ) : (
+                                  <span style={{background:'#fee2e2', color:'#dc2626', padding:'4px 8px', borderRadius:'4px', fontSize:'11px', fontWeight:'bold'}}>
+                                    ESGOTADO
+                                  </span>
+                              )}
+                            </td>
+
+                            {/* COLUNA 7: AÇÕES */}
+                            <td style={{padding: '12px', textAlign: 'center'}}>
+                              <button 
+                                onClick={() => abrirModal(bem)}
+                                style={{fontSize: '12px', padding: '6px 12px', cursor:'pointer', background: 'white', border:'1px solid #d1d5db', borderRadius:'4px', display: 'inline-flex', alignItems: 'center', gap: '5px', color: '#4b5563'}}
+                              >
+                                <FaEdit /> Editar
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </React.Fragment>
+                    ))
+                )}
               </tbody>
             </table>
         </div>
@@ -327,81 +313,53 @@ function UnidadeDetalhes() {
                 backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000
             }}>
                 <div style={{
-                    background: 'white', padding: '25px', borderRadius: '8px', width: '500px', maxWidth: '90%', boxShadow: '0 4px 10px rgba(0,0,0,0.2)'
+                    background: 'white', padding: '25px', borderRadius: '8px', width: '450px', maxWidth: '90%', boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
                 }}>
-                    <div style={{display:'flex', justifyContent:'space-between', marginBottom:'20px'}}>
-                        <h3 style={{margin:0}}>Editar Bem: {bemEditando?.nome}</h3>
-                        <button onClick={() => setModalAberto(false)} style={{background:'none', border:'none', cursor:'pointer', fontSize:'20px'}}>
+                    <div style={{display:'flex', justifyContent:'space-between', marginBottom:'20px', borderBottom: '1px solid #eee', paddingBottom: '10px'}}>
+                        <h3 style={{margin:0, fontSize: '18px'}}>Editar Produto: {bemEditando?.nome}</h3>
+                        <button onClick={() => setModalAberto(false)} style={{background:'none', border:'none', cursor:'pointer', fontSize:'18px', color: '#999'}}>
                             <FaTimes />
                         </button>
                     </div>
 
                     <form onSubmit={salvarEdicao}>
-                        {/* Campos de Edição */}
-                        <div style={{display:'flex', gap:'15px', marginBottom:'20px'}}>
-                            <div style={{flex:1}}>
-                                <label style={{display:'block', fontSize:'12px', marginBottom:'5px', fontWeight:'bold'}}>Situação</label>
-                                <select 
-                                    value={editForm.situacao}
-                                    onChange={e => setEditForm({...editForm, situacao: e.target.value})}
-                                    style={{width:'100%', padding:'8px', borderRadius:'4px', border:'1px solid #ccc'}}
-                                >
-                                    <option value="RECUPERAVEL">Recuperável</option>
-                                    <option value="ANTIECONOMICO">Antieconômico</option>
-                                    <option value="IRRECUPERAVEL">Irrecuperável</option>
-                                    <option value="OCIOSO">Ocioso</option>
-                                </select>
+                        {/* Seção de Baixa / Venda Manual */}
+                        <div style={{background: '#fff1f2', padding: '15px', borderRadius: '6px', border: '1px solid #fecdd3', marginBottom: '20px'}}>
+                            <h4 style={{color:'#be123c', margin:'0 0 10px 0', fontSize:'14px'}}>Registro de Saída Manual / Baixa</h4>
+                            
+                            <div style={{marginBottom:'10px'}}>
+                                <label style={{display:'block', fontSize:'12px', marginBottom:'5px', fontWeight: 'bold'}}>Data da Baixa</label>
+                                <input 
+                                    type="date" 
+                                    value={editForm.data_baixa} 
+                                    onChange={e => setEditForm({...editForm, data_baixa: e.target.value})}
+                                    style={{width:'100%', padding:'8px', border:'1px solid #ccc', borderRadius:'4px'}}
+                                />
                             </div>
-                            <div style={{flex:1}}>
-                                <label style={{display:'block', fontSize:'12px', marginBottom:'5px', fontWeight:'bold'}}>Estado de Conservação</label>
-                                <select 
-                                    value={editForm.estado_conservacao}
-                                    onChange={e => setEditForm({...editForm, estado_conservacao: e.target.value})}
-                                    style={{width:'100%', padding:'8px', borderRadius:'4px', border:'1px solid #ccc'}}
-                                >
-                                    <option value="EXCELENTE">Excelente (10)</option>
-                                    <option value="BOM">Bom (8)</option>
-                                    <option value="REGULAR">Regular (5)</option>
-                                </select>
+
+                            <div style={{marginBottom:'10px'}}>
+                                <label style={{display:'block', fontSize:'12px', marginBottom:'5px', fontWeight: 'bold'}}>Motivo / Observação</label>
+                                <textarea 
+                                    rows="2"
+                                    value={editForm.obs_baixa}
+                                    onChange={e => setEditForm({...editForm, obs_baixa: e.target.value})}
+                                    placeholder="Ex: Produto vencido, danificado ou ajuste de estoque..."
+                                    style={{width:'100%', padding:'8px', border:'1px solid #ccc', borderRadius:'4px', resize:'vertical'}}
+                                ></textarea>
                             </div>
                         </div>
 
-                        <hr style={{border:'0', borderTop:'1px solid #eee', margin:'15px 0'}} />
-                        
-                        <h4 style={{color:'#dc2626', marginBottom:'15px', fontSize:'14px'}}>Registro de Baixa (Saída)</h4>
-                        
-                        <div style={{marginBottom:'15px'}}>
-                            <label style={{display:'block', fontSize:'12px', marginBottom:'5px'}}>Data da Baixa</label>
-                            <input 
-                                type="date" 
-                                value={editForm.data_baixa} 
-                                onChange={e => setEditForm({...editForm, data_baixa: e.target.value})}
-                                style={{width:'100%', padding:'8px', border:'1px solid #ccc', borderRadius:'4px'}}
-                            />
-                        </div>
-
-                        <div style={{marginBottom:'20px'}}>
-                            <label style={{display:'block', fontSize:'12px', marginBottom:'5px'}}>Motivo / Observação</label>
-                            <textarea 
-                                rows="3"
-                                value={editForm.obs_baixa}
-                                onChange={e => setEditForm({...editForm, obs_baixa: e.target.value})}
-                                placeholder="Descreva o motivo da baixa..."
-                                style={{width:'100%', padding:'8px', border:'1px solid #ccc', borderRadius:'4px', resize:'vertical'}}
-                            ></textarea>
-                        </div>
-
-                        <div style={{textAlign:'right'}}>
+                        <div style={{textAlign:'right', display: 'flex', gap: '10px', justifyContent: 'flex-end'}}>
                             <button 
                                 type="button" 
                                 onClick={() => setModalAberto(false)}
-                                style={{marginRight:'10px', padding:'10px 20px', border:'none', background:'#ccc', borderRadius:'4px', cursor:'pointer'}}
+                                style={{padding:'10px 20px', border:'1px solid #ddd', background:'white', borderRadius:'4px', cursor:'pointer', fontWeight: 'bold', color: '#555'}}
                             >
                                 Cancelar
                             </button>
                             <button 
                                 type="submit" 
-                                style={{padding:'10px 20px', border:'none', background:'#2563eb', color:'white', borderRadius:'4px', cursor:'pointer', fontWeight:'bold'}}
+                                style={{padding:'10px 20px', border:'none', background:'#007bff', color:'white', borderRadius:'4px', cursor:'pointer', fontWeight:'bold'}}
                             >
                                 Salvar Alterações
                             </button>

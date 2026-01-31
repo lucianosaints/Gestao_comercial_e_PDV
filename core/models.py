@@ -1,114 +1,123 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-# --- UNIDADE ---
+# 1. UNIDADE
 class Unidade(models.Model):
     nome = models.CharField(max_length=100)
     endereco = models.CharField(max_length=200, blank=True, null=True)
+    def __str__(self): return self.nome
 
-    def __str__(self):
-        return self.nome
-
-# --- CATEGORIA ---
+# 2. CATEGORIA
 class Categoria(models.Model):
     nome = models.CharField(max_length=100)
-
-    def __str__(self):
-        return self.nome
-
-# --- SALA ---
-class Sala(models.Model):
-    nome = models.CharField(max_length=100)
-    unidade = models.ForeignKey(Unidade, on_delete=models.PROTECT)
-
-    def __str__(self):
-        return f"{self.nome} ({self.unidade.nome})"
-
-# --- BEM ---
-class Bem(models.Model):
-    SITUACAO_CHOICES = [
-        ('RECUPERAVEL', 'Recuperável'),
-        ('ANTIECONOMICO', 'Antieconômico'),
-        ('IRRECUPERAVEL', 'Irrecuperável'),
-        ('OCIOSO', 'Ocioso'),
-    ]
-
-    ESTADO_CHOICES = [
-        ('EXCELENTE', 'Excelente - Nota 10'),
-        ('BOM', 'Bom - Nota 8'),
-        ('REGULAR', 'Regular - Nota 5'),
-    ]
-
-    ORIGEM_CHOICES = [
-        ('PROPRIO', 'Próprio'),
-        ('DOACAO', 'Doação'),
-        ('ALUGADO', 'Alugado'),
-    ]
-
-    nome = models.CharField(max_length=100)
     descricao = models.TextField(blank=True, null=True)
-    tombo = models.CharField(max_length=20, unique=True)
-    numero_serie = models.CharField(max_length=100, blank=True, null=True) # Adicionado o campo numero_serie
-    valor = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    
-    situacao = models.CharField(max_length=20, choices=SITUACAO_CHOICES, default='RECUPERAVEL')
-    estado_conservacao = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='EXCELENTE')
-    origem = models.CharField(max_length=20, choices=ORIGEM_CHOICES, default='PROPRIO')
+    def __str__(self): return self.nome
 
-    data_baixa = models.DateField(null=True, blank=True)
-    obs_baixa = models.TextField(blank=True, null=True)
-
-    categoria = models.ForeignKey(Categoria, on_delete=models.PROTECT)
-    unidade = models.ForeignKey(Unidade, on_delete=models.PROTECT)
-    sala = models.ForeignKey(Sala, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Sala")    
-    criado_em = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.nome} ({self.tombo})"
-
-# --- GESTOR ---
+# 3. GESTOR
 class Gestor(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
     nome = models.CharField(max_length=100)
     cpf = models.CharField(max_length=14, unique=True)
-    telefone = models.CharField(max_length=20)
-    endereco = models.CharField(max_length=200)
+    telefone = models.CharField(max_length=20, blank=True, null=True)
+    unidade = models.ForeignKey(Unidade, on_delete=models.SET_NULL, null=True, blank=True)
+    def __str__(self): return self.nome
+
+# 4. SALA
+class Sala(models.Model):
+    nome = models.CharField(max_length=100)
+    unidade = models.ForeignKey(Unidade, on_delete=models.CASCADE)
+    def __str__(self): return f"{self.nome} - {self.unidade.nome}"
+
+# 5. FORNECEDOR
+class Fornecedor(models.Model):
+    nome = models.CharField(max_length=100)
+    cnpj_cpf = models.CharField(max_length=20, blank=True, null=True)
+    telefone = models.CharField(max_length=20, blank=True, null=True)
+    email = models.EmailField(blank=True, null=True)
+    def __str__(self): return self.nome
+
+# 6. BEM (PRODUTO)
+class Bem(models.Model):
+    nome = models.CharField(max_length=100)
+    descricao = models.TextField(blank=True, null=True)
+    
+    # Campo de Imagem
+    imagem = models.ImageField(upload_to='produtos/', blank=True, null=True)
+
+    # Relacionamentos
     unidade = models.ForeignKey(Unidade, on_delete=models.PROTECT)
+    sala = models.ForeignKey(Sala, on_delete=models.SET_NULL, null=True, blank=True)
+    categoria = models.ForeignKey(Categoria, on_delete=models.PROTECT)
+    fornecedor = models.ForeignKey(Fornecedor, on_delete=models.SET_NULL, null=True, blank=True, related_name='produtos')
     
-    pode_cadastrar = models.BooleanField(default=False, verbose_name="Pode Cadastrar Bens?")
-    pode_editar = models.BooleanField(default=False, verbose_name="Pode Editar Bens?")
-    pode_dar_baixa = models.BooleanField(default=False, verbose_name="Pode dar Baixa?")
-    pode_cadastrar_unidade = models.BooleanField(default=False, verbose_name="Pode Cadastrar Unidades?")
-    pode_cadastrar_categoria = models.BooleanField(default=False, verbose_name="Pode Cadastrar Categorias?")
-    pode_cadastrar_sala = models.BooleanField(default=False, verbose_name="Pode Cadastrar Salas?")
-    pode_cadastrar_gestor = models.BooleanField(default=False, verbose_name="Pode Cadastrar Gestores?")
+    # Dados
+    valor = models.DecimalField(max_digits=10, decimal_places=2)
+    quantidade = models.IntegerField(default=1)
+    codigo_barras = models.CharField(max_length=50, blank=True, null=True, unique=True)
+    data_aquisicao = models.DateField(auto_now_add=True)
+
+    # Campos legados
+    tombo = models.CharField(max_length=50, blank=True, null=True)
+    situacao = models.CharField(max_length=50, default="Novo", blank=True)
+    estado_conservacao = models.CharField(max_length=50, default="Excelente", blank=True)
+    origem = models.CharField(max_length=100, default="Compra", blank=True)
     
-    criado_em = models.DateTimeField(auto_now_add=True)
+    skip_signal = models.BooleanField(default=False)
 
-    def __str__(self):
-        return self.nome
+    def __str__(self): return f"{self.nome}"
 
-# --- HISTÓRICO ---
+# 7. VENDA
+class Venda(models.Model):
+    data_venda = models.DateTimeField(auto_now_add=True)
+    valor_total = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    forma_pagamento = models.CharField(max_length=50, default='DINHEIRO')
+    def __str__(self): return f"Venda #{self.id}"
+
+# 8. ITEM VENDA
+class ItemVenda(models.Model):
+    venda = models.ForeignKey(Venda, related_name='itens', on_delete=models.CASCADE)
+    produto = models.ForeignKey(Bem, on_delete=models.PROTECT)
+    quantidade = models.IntegerField(default=1)
+    preco_unitario = models.DecimalField(max_digits=10, decimal_places=2)
+    def __str__(self): return f"{self.quantidade}x {self.produto.nome}"
+
+# 9. HISTÓRICO
 class Historico(models.Model):
     bem = models.ForeignKey(Bem, on_delete=models.CASCADE, related_name='historico')
-    usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    descricao = models.TextField()
+    descricao = models.CharField(max_length=255)
     data = models.DateTimeField(auto_now_add=True)
+    usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    def __str__(self): return f"{self.descricao}"
 
-    class Meta:
-        ordering = ['-data']
+# 10. DESPESA (FINANCEIRO)
+class Despesa(models.Model):
+    TIPO_CHOICES = [
+        ('FIXA', 'Despesa Fixa (Luz, Água, Aluguel)'),
+        ('BOLETO', 'Boleto Fornecedor'),
+        ('OUTRO', 'Outros Gastos'),
+    ]
+    
+    SITUACAO_CHOICES = [
+        ('PENDENTE', 'Pendente (A Pagar)'),
+        ('PAGO', 'Pago'),
+        ('ATRASADO', 'Atrasado'),
+    ]
+
+    descricao = models.CharField(max_length=200) # Ex: "Conta de Luz Janeiro"
+    
+    # --- NOVO CAMPO ADICIONADO AQUI ---
+    numero_documento = models.CharField(max_length=50, blank=True, null=True)
+    # ----------------------------------
+
+    valor = models.DecimalField(max_digits=10, decimal_places=2)
+    data_vencimento = models.DateField()
+    data_pagamento = models.DateField(blank=True, null=True)
+    
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default='FIXA')
+    situacao = models.CharField(max_length=20, choices=SITUACAO_CHOICES, default='PENDENTE')
+    
+    # Opcional: Ligar a despesa a um fornecedor específico
+    fornecedor = models.ForeignKey(Fornecedor, on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
-        return f"{self.bem.nome} - {self.data}"
-
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-
-@receiver(post_save, sender=Bem)
-def registrar_historico(sender, instance, created, **kwargs):
-    if not created: # Apenas se o bem já existir (for uma edição)
-        Historico.objects.create(
-            bem=instance,
-            descricao=f"Movimentação/Alteração detectada. Situação: {instance.situacao}",
-            # O campo 'data' geralmente tem auto_now_add=True no model
-        )
+        return f"{self.descricao} - R$ {self.valor}"

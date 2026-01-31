@@ -1,27 +1,48 @@
-/* Cabeçalho da página com botão alinhado à direita */
-.page-header-row {
+/* frontend/src/Unidades.css */
+
+.page-container {
+  background-color: #f8fafc;
+  min-height: 100vh;
+  padding: 40px;
+  font-family: 'Inter', sans-serif;
+}
+
+/* HEADER */
+.page-header-flex {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 25px;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+  gap: 20px;
 }
 
-.page-header-row h1 {
+.header-title h1 {
+  font-size: 26px;
+  font-weight: 700;
+  color: #0f172a;
   margin: 0;
-  color: #1e3a8a;
-  font-size: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-.page-header-row p {
-  color: #6b7280;
+.header-title p {
+  color: #64748b;
   margin: 5px 0 0 0;
+  font-size: 14px;
 }
 
-/* Botão de Adicionar (Verde para destacar) */
-.btn-add {
-  background-color: #10b981; /* Verde Esmeralda */
-  color: white;
-  border: none;
+/* BOTÕES */
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-back {
+  background: white;
+  border: 1px solid #e2e8f0;
+  color: #475569;
   padding: 10px 20px;
   border-radius: 8px;
   font-weight: 600;
@@ -29,40 +50,126 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  transition: background-color 0.2s;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: 0.2s;
 }
 
-.btn-add:hover {
-  background-color: #059669;
+.btn-back:hover {
+  background: #f1f5f9;
+  color: #1e293b;
 }
 
-/* Estado Vazio (quando não tem dados) */
-.empty-state {
-  text-align: center;
-  padding: 40px;
-  color: #6b7280;
+.btn-new {
+  background: #10b981; /* Verde Sakura */
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);
+  transition: 0.2s;
 }
 
-.empty-state p {
-  font-size: 18px;
-  font-weight: 500;
-  margin-bottom: 5px;
+.btn-new:hover {
+  background: #059669;
+  transform: translateY(-1px);
 }
 
-/* Ajustes finos na tabela */
-.custom-table {
+/* CARTÃO DA TABELA */
+.content-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  border: 1px solid #f1f5f9;
+  overflow: hidden;
+}
+
+.modern-table {
   width: 100%;
   border-collapse: collapse;
 }
 
-.custom-table th {
-  background-color: #f9fafb;
+.modern-table th {
+  background: #f8fafc;
+  padding: 16px 24px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
   text-transform: uppercase;
-  font-size: 12px;
-  letter-spacing: 0.05em;
+  color: #64748b;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #e2e8f0;
 }
 
-.custom-table tr:hover {
-  background-color: #f8fafc; /* Efeito hover nas linhas */
+.modern-table td {
+  padding: 16px 24px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+  vertical-align: middle;
 }
+
+.modern-table tr:hover {
+  background-color: #f8fafc;
+}
+
+.modern-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* ESTILOS DE TEXTO E ÍCONES NA TABELA */
+.store-name {
+  font-weight: 600;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.store-icon-bg {
+  background: #ecfdf5;
+  color: #10b981;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.address-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.id-badge {
+  background: #f1f5f9;
+  color: #64748b;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* BOTÕES DE AÇÃO NA TABELA */
+.action-btn {
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  transition: 0.2s;
+  margin-left: 5px;
+}
+
+.action-btn.edit { color: #f59e0b; background: #fffbeb; }
+.action-btn.edit:hover { background: #fcd34d; color: #78350f; }
+
+.action-btn.delete { color: #ef4444; background: #fef2f2; }
+.action-btn.delete:hover { background: #fca5a5; color: #7f1d1d; }

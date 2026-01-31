@@ -1,70 +1,100 @@
-from rest_framework import viewsets, permissions
-from rest_framework.generics import GenericAPIView
-from rest_framework.serializers import Serializer
-from rest_framework import serializers
-from django.db.models import Sum
-from .permissions import (
-    IsGestorWithCadastrarPermission,
-    IsGestorWithEditarPermission,
-    IsGestorWithCadastrarCategoriaPermission,
-    IsGestorWithEditarCategoriaPermission,
-    IsGestorWithDarBaixaPermission,
-    IsGestorWithCadastrarGestorPermission,
-    IsGestorWithCadastrarSalaPermission,
-    IsGestorWithEditarSalaPermission,
-    OrPermission,  # Importar a classe OrPermission personalizada
-    AndPermission, # Importar a classe AndPermission personalizada
-)
-from rest_framework.decorators import action, api_view
+from rest_framework import viewsets, permissions, status
+from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.decorators import action
 from django.db.models import Sum
-from .models import Unidade, Categoria, Bem, Gestor, Sala, Historico
-from .serializers import UnidadeSerializer, CategoriaSerializer, DashboardResumoView,BemSerializer, GestorSerializer, SalaSerializer, HistoricoSerializer
-from .permissions import (
-    IsGestorWithCadastrarPermission,
-    IsGestorWithEditarPermission,
-    IsGestorWithCadastrarCategoriaPermission,
-    IsGestorWithEditarCategoriaPermission,
-    IsGestorWithDarBaixaPermission,
-    IsGestorWithCadastrarGestorPermission,
-    IsGestorWithCadastrarSalaPermission,
-    IsGestorWithEditarSalaPermission,
-    IsGestorWithCadastrarUnidadePermission,
-    IsGestorWithCadastrarCategoriaPermission,
-    IsGestorWithCadastrarSalaPermission,
-    IsGestorWithCadastrarGestorPermission
-)
-class DashboardResumoSerializer(Serializer):
-    total_bens = serializers.IntegerField()
-    total_unidades = serializers.IntegerField()
-    total_categorias = serializers.IntegerField()
-    valor_total = serializers.DecimalField(max_digits=10, decimal_places=2)
-# --- VIEWSETS (CRUDs) ---
 
+# --- 1. IMPORTS DOS MODELS (Tudo junto para não dar erro) ---
+from .models import (
+    Unidade, Categoria, Bem, Gestor, Sala, 
+    Historico, Venda, ItemVenda, Fornecedor, Despesa
+)
+
+# --- 2. IMPORTS DOS SERIALIZERS ---
+from .serializers import (
+    UnidadeSerializer, CategoriaSerializer, BemSerializer, 
+    GestorSerializer, SalaSerializer, HistoricoSerializer, 
+    VendaSerializer, FornecedorSerializer, DespesaSerializer
+)
+
+# =================================================
+# VIEWSETS (CRUDs PADRÃO)
+# =================================================
+
+# 1. FORNECEDOR
+class FornecedorViewSet(viewsets.ModelViewSet):
+    queryset = Fornecedor.objects.all()
+    serializer_class = FornecedorSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+# 2. VENDA (Com lógica de baixa de estoque)
+class VendaViewSet(viewsets.ModelViewSet):
+    queryset = Venda.objects.all().order_by('-data_venda')
+    serializer_class = VendaSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = Venda.objects.all().order_by('-data_venda')
+        data_filtro = self.request.query_params.get('data')
+        if data_filtro:
+            queryset = queryset.filter(data_venda__date=data_filtro)
+        return queryset
+
+    def create(self, request, *args, **kwargs):
+        itens_data = request.data.get('itens', [])
+        valor_total = request.data.get('valor_total')
+        forma_pagamento = request.data.get('forma_pagamento', 'DINHEIRO')
+
+        nova_venda = Venda.objects.create(
+            valor_total=valor_total,
+            forma_pagamento=forma_pagamento
+        )
+
+        for item in itens_data:
+            produto_id = item['produto']
+            quantidade_vendida = item['quantidade']
+            preco = item['preco_unitario']
+
+            try:
+                produto = Bem.objects.get(id=produto_id)
+                if produto.quantidade < quantidade_vendida:
+                    nova_venda.delete()
+                    return Response(
+                        {"error": f"Produto '{produto.nome}' tem apenas {produto.quantidade} em estoque."}, 
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+                ItemVenda.objects.create(
+                    venda=nova_venda,
+                    produto=produto,
+                    quantidade=quantidade_vendida,
+                    preco_unitario=preco
+                )
+
+                # Baixa no estoque
+                produto.quantidade -= quantidade_vendida
+                produto.save()
+
+            except Bem.DoesNotExist:
+                nova_venda.delete()
+                return Response({"error": "Produto não encontrado"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = self.get_serializer(nova_venda)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+# 3. UNIDADE
 class UnidadeViewSet(viewsets.ModelViewSet):
     queryset = Unidade.objects.all()
     serializer_class = UnidadeSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def get_permissions(self):
-        if self.action == 'create':
-            return [OrPermission(permissions.IsAdminUser, AndPermission(permissions.IsAuthenticated, IsGestorWithCadastrarPermission))]
-        elif self.action in ['update', 'partial_update', 'destroy']:
-            return [OrPermission(permissions.IsAdminUser, AndPermission(permissions.IsAuthenticated, IsGestorWithEditarPermission))]
-        return [OrPermission(permissions.IsAdminUser, permissions.IsAuthenticated)]
-
+# 4. CATEGORIA
 class CategoriaViewSet(viewsets.ModelViewSet):
     queryset = Categoria.objects.all()
     serializer_class = CategoriaSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def get_permissions(self):
-        if self.action == 'create':
-            return [OrPermission(permissions.IsAdminUser, AndPermission(permissions.IsAuthenticated, IsGestorWithCadastrarCategoriaPermission))]
-        elif self.action in ['update', 'partial_update', 'destroy']:
-            return [OrPermission(permissions.IsAdminUser, AndPermission(permissions.IsAuthenticated, IsGestorWithEditarCategoriaPermission))]
-        return [OrPermission(permissions.IsAdminUser, permissions.IsAuthenticated)]
-
+# 5. BEM (PRODUTOS)
 class BemViewSet(viewsets.ModelViewSet):
     queryset = Bem.objects.all()
     serializer_class = BemSerializer
@@ -73,146 +103,99 @@ class BemViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = Bem.objects.all()
         sala_id = self.request.query_params.get('sala')
+        unidade_id = self.request.query_params.get('unidade')
+        
         if sala_id:
             queryset = queryset.filter(sala_id=sala_id)
+        if unidade_id:
+            queryset = queryset.filter(unidade_id=unidade_id)
         return queryset
 
-    # --- LÓGICA DE RASTREAMENTO (HISTÓRICO) ---
     def perform_update(self, serializer):
-        # 1. Pega os dados ANTIGOS (antes de salvar)
-        bem_antigo = self.get_object()
-        old_unidade = bem_antigo.unidade
-        old_sala = bem_antigo.sala
-        
-        # 2. Salva os NOVOS dados e pega o objeto atualizado
         bem_novo = serializer.save()
+        Historico.objects.create(
+            bem=bem_novo,
+            usuario=self.request.user,
+            descricao="Produto atualizado."
+        )
 
-        # 3. Compara se mudou Unidade ou Sala
-        mudancas = []
-        
-        # Verifica mudança de Unidade (Transferência Externa)
-        if old_unidade != bem_novo.unidade:
-            nome_antigo = old_unidade.nome if old_unidade else "Sem Unidade"
-            nome_novo = bem_novo.unidade.nome if bem_novo.unidade else "Sem Unidade"
-            # FRASE ALTERADA AQUI:
-            mudancas.append(f"Bem transferido da Unidade '{nome_antigo}' para '{nome_novo}'")
-
-        # Verifica mudança de Sala (Movimentação Interna)
-        if old_sala != bem_novo.sala:
-            nome_antigo = old_sala.nome if old_sala else "Sem Sala"
-            nome_novo = bem_novo.sala.nome if bem_novo.sala else "Sem Sala"
-            # FRASE ALTERADA AQUI:
-            mudancas.append(f"Bem transferido da Sala '{nome_antigo}' para '{nome_novo}'")
-
-        # 4. Se houve mudança, cria o registro no histórico
-        if mudancas:
-            texto_historico = ". ".join(mudancas)
-            Historico.objects.create(
-                bem=bem_novo,
-                usuario=self.request.user, # Pega o usuário logado automaticamente
-                descricao=texto_historico
-            )
-
-    # Rota extra para o Front-end pegar o histórico: /api/bens/ID/historico/
     @action(detail=True, methods=['get'])
     def historico(self, request, pk=None):
         bem = self.get_object()
-        # Pega todo o histórico desse bem
         historico = bem.historico.all()
         serializer = HistoricoSerializer(historico, many=True)
         return Response(serializer.data)
 
-    def get_permissions(self):
-        if self.action == 'create':
-            return [OrPermission(permissions.IsAdminUser, AndPermission(permissions.IsAuthenticated, IsGestorWithCadastrarPermission))]
-        elif self.action in ['update', 'partial_update', 'destroy']:
-            return [OrPermission(permissions.IsAdminUser, AndPermission(permissions.IsAuthenticated, IsGestorWithEditarPermission))]
-        elif self.action == 'dar_baixa':
-            return [OrPermission(permissions.IsAdminUser, AndPermission(permissions.IsAuthenticated, IsGestorWithDarBaixaPermission))]
-        return [OrPermission(permissions.IsAdminUser, permissions.IsAuthenticated)]
-
+# 6. GESTOR
 class GestorViewSet(viewsets.ModelViewSet):
     queryset = Gestor.objects.all()
     serializer_class = GestorSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
-    def get_permissions(self):
-        if self.action == 'create':
-            return [OrPermission(permissions.IsAdminUser, AndPermission(permissions.IsAuthenticated, IsGestorWithCadastrarGestorPermission))]
-        elif self.action in ['update', 'partial_update', 'destroy']:
-            return [OrPermission(permissions.IsAdminUser, AndPermission(permissions.IsAuthenticated, IsGestorWithCadastrarGestorPermission))]
-        return [OrPermission(permissions.IsAdminUser, permissions.IsAuthenticated)]
-
+# 7. SALA
 class SalaViewSet(viewsets.ModelViewSet):
     queryset = Sala.objects.all()
     serializer_class = SalaSerializer
-
-    def get_permissions(self):
-        if self.action == 'create':
-            return [OrPermission(permissions.IsAdminUser, AndPermission(permissions.IsAuthenticated, IsGestorWithCadastrarSalaPermission))]
-        elif self.action in ['update', 'partial_update', 'destroy']:
-            return [OrPermission(permissions.IsAdminUser, AndPermission(permissions.IsAuthenticated, IsGestorWithEditarSalaPermission))]
-        return [OrPermission(permissions.IsAdminUser, permissions.IsAuthenticated)]
-
+    permission_classes = [permissions.IsAuthenticated]
+    
     def get_queryset(self):
         queryset = Sala.objects.all()
-        # Captura o ID da unidade que o React vai enviar na URL (?unidade=1)
         unidade_id = self.request.query_params.get('unidade')
-        
         if unidade_id:
-            # Filtra apenas as salas daquela unidade
             queryset = queryset.filter(unidade_id=unidade_id)
-            
         return queryset
 
-# --- FUNÇÕES EXTRAS (Dashboard) ---
-
-@api_view(['GET'])
-def dashboard_resumo(request):
-    total_bens = Bem.objects.count()
-    total_unidades = Unidade.objects.count()
-    total_categorias = Categoria.objects.count()
-    
-    # Soma o valor de todos os bens (trata caso seja None)
-    valor_total = Bem.objects.aggregate(Sum('valor'))['valor__sum'] or 0
-
-    return Response({
-        "total_bens": total_bens,
-        "total_unidades": total_unidades,
-        "total_categorias": total_categorias,
-        "valor_total": valor_total
-    })
-
+# 8. HISTÓRICO (Somente Leitura)
 class HistoricoViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Historico.objects.all()
     serializer_class = HistoricoSerializer
-    permission_classes = [permissions.AllowAny]
-
-    def get_queryset(self):
-        queryset = Historico.objects.all()
-        bem_id = self.request.query_params.get('bem') # Pega o ?bem=ID
-        if bem_id:
-            # Certifique-se que o nome do campo no Model é 'bem'
-            queryset = queryset.filter(bem_id=bem_id) 
-        return queryset.order_by('-data')
-
-
-class DashboardResumoView(GenericAPIView):
-    serializer_class = DashboardResumoSerializer
     permission_classes = [permissions.IsAuthenticated]
-    
-    def get(self, request):
-        total_bens = Bem.objects.count()
-        total_unidades = Unidade.objects.count()
-        total_categorias = Categoria.objects.count()
-        valor_total = Bem.objects.aggregate(Sum('valor'))['valor__sum'] or 0
-        
-        data = {
-            "total_bens": total_bens,
-            "total_unidades": total_unidades,
-            "total_categorias": total_categorias,
-            "valor_total": valor_total
-        }
-        serializer = self.get_serializer(data)
-        return Response(serializer.data)
 
-dashboard_resumo = DashboardResumoView.as_view()
+# 9. DESPESAS (FINANCEIRO)
+class DespesaViewSet(viewsets.ModelViewSet):
+    queryset = Despesa.objects.all().order_by('data_vencimento')
+    serializer_class = DespesaSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+# =================================================
+# VIEWS ESPECIAIS (DASHBOARD)
+# =================================================
+
+# 10. RESUMO DOS CARDS
+class DashboardResumoView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        data = {
+            "total_bens": Bem.objects.count(),
+            "total_unidades": Unidade.objects.count(),
+            "total_categorias": Categoria.objects.count(),
+            "total_salas": Sala.objects.count(),
+            # Se quiser adicionar gestores, descomente abaixo:
+            # "total_gestores": Gestor.objects.count(),
+        }
+        return Response(data)
+
+# 11. GRÁFICO DE VENDAS
+class GraficoVendasView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        # Agrupa itens vendidos pelo nome e soma a quantidade
+        dados = ItemVenda.objects.values('produto__nome') \
+            .annotate(total_vendas=Sum('quantidade')) \
+            .order_by('-total_vendas')[:5]
+
+        # Formata para o React
+        resultado = []
+        for item in dados:
+            resultado.append({
+                'name': item['produto__nome'], 
+                'vendas': item['total_vendas']
+            })
+        
+        # Evita erro de gráfico vazio
+        if not resultado:
+            resultado = [{'name': 'Sem Vendas', 'vendas': 0}]
+            
+        return Response(resultado)

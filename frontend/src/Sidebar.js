@@ -1,92 +1,157 @@
-import React, { useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FaHome, FaBox, FaBuilding, FaTags, FaDoorOpen, FaSignOutAlt, FaUserTie, FaBars } from 'react-icons/fa'; // Importar FaBars
-import './Sidebar.css';
+import React from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { 
+  FaHome, FaCashRegister, FaChartLine, FaBox, FaWarehouse, 
+  FaStore, FaLayerGroup, FaUserTie, FaSignOutAlt, FaBars, 
+  FaTruck, FaCalculator 
+} from 'react-icons/fa';
 
-// Recebe as props isCollapsed e toggleCollapse
+// NÃO PRECISA MAIS IMPORTAR O CSS AQUI
+// As cores estão definidas abaixo
+
 function Sidebar({ isCollapsed, toggleCollapse }) {
-  const location = useLocation();
   const navigate = useNavigate();
-  // Removido o estado isMobile e o useEffect associado, pois isCollapsed já reflete o estado mobile do Dashboard.js
+  const location = useLocation();
 
-  console.log('Sidebar rendered. isCollapsed:', isCollapsed);
   const handleLogout = () => {
-    // Remove o token e redireciona para login
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     navigate('/login');
   };
 
-  // Função para verificar se o link está ativo (para ficar azul)
-  const isActive = (path) => location.pathname === path ? 'active' : '';
-
-  const handleLinkClick = () => {
-    // Em dispositivos móveis (largura da janela < 768px), a barra lateral deve sempre recolher ao clicar num link.
-    // Em desktop, a lógica de recolher/expandir é controlada pelo botão de toggle.
-    if (window.innerWidth < 768 && !isCollapsed) {
-      toggleCollapse();
-      console.log('handleLinkClick: Toggling sidebar on mobile.');
+  // --- ESTILOS DIRETOS (GARANTIA QUE VAI FUNCIONAR) ---
+  const styles = {
+    container: {
+      width: isCollapsed ? '80px' : '260px',
+      backgroundColor: '#0f172a', // AZUL ESCURO (PRETO)
+      color: 'white',
+      display: 'flex',
+      flexDirection: 'column',
+      position: 'fixed',
+      height: '100vh',
+      transition: 'width 0.3s ease',
+      zIndex: 1000,
+      left: 0,
+      top: 0
+    },
+    header: {
+      height: '60px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: '0 20px',
+      backgroundColor: 'rgba(0,0,0,0.2)',
+      borderBottom: '1px solid rgba(255,255,255,0.1)'
+    },
+    menuList: {
+      listStyle: 'none', // Tira as bolinhas
+      padding: 0,
+      margin: 0,
+      flex: 1,
+      overflowY: 'auto'
+    },
+    menuSection: {
+      fontSize: '11px',
+      textTransform: 'uppercase',
+      color: '#94a3b8',
+      margin: '20px 20px 5px',
+      fontWeight: 'bold',
+      display: isCollapsed ? 'none' : 'block'
+    },
+    item: (isActive) => ({
+      display: 'flex',
+      alignItems: 'center',
+      padding: '12px 20px',
+      cursor: 'pointer',
+      color: isActive ? '#10b981' : '#e2e8f0',
+      backgroundColor: isActive ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
+      borderLeft: isActive ? '3px solid #10b981' : '3px solid transparent',
+      justifyContent: isCollapsed ? 'center' : 'flex-start',
+      textDecoration: 'none'
+    }),
+    text: {
+      marginLeft: '15px',
+      display: isCollapsed ? 'none' : 'block',
+      fontWeight: '500'
+    },
+    footer: {
+      padding: '20px',
+      borderTop: '1px solid rgba(255,255,255,0.1)'
+    },
+    logoutBtn: {
+      width: '100%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'transparent',
+      border: '1px solid #ef4444',
+      color: '#ef4444',
+      padding: '10px',
+      borderRadius: '6px',
+      cursor: 'pointer',
+      fontWeight: 'bold'
     }
   };
 
+  const menuItems = [
+    { title: 'Painel Principal', icon: <FaHome size={20}/>, path: '/dashboard' },
+    { title: 'Frente de Caixa (PDV)', icon: <FaCashRegister size={20}/>, path: '/vendas' },
+    { title: 'Financeiro (Saídas)', icon: <FaCalculator size={20}/>, path: '/financeiro' },
+    { title: 'Relatório Vendas', icon: <FaChartLine size={20}/>, path: '/relatorio-vendas' },
+    
+    { section: 'GESTÃO' },
+    { title: 'Produtos', icon: <FaBox size={20}/>, path: '/bens' },
+    { title: 'Fornecedores', icon: <FaTruck size={20}/>, path: '/fornecedores' },
+    { title: 'Locais de Estoque', icon: <FaWarehouse size={20}/>, path: '/salas' },
+    
+    { section: 'CONFIGURAÇÕES' },
+    { title: 'Lojas / Filiais', icon: <FaStore size={20}/>, path: '/unidades' },
+    { title: 'Departamentos', icon: <FaLayerGroup size={20}/>, path: '/categorias' },
+    { title: 'Gestores', icon: <FaUserTie size={20}/>, path: '/gestores' },
+  ];
+
   return (
-    // Aplica a classe 'collapsed' se isCollapsed for true
-    <div className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
-      <div className="sidebar-header">
-        <h2>{isCollapsed ? 'PT' : 'Patri-Tech'}</h2> {/* Mostra "PT" quando colapsado */}
-        <button onClick={toggleCollapse} className="toggle-btn"> {/* Botão para recolher/expandir */}
+    <div style={styles.container}>
+      
+      <div style={styles.header}>
+        {!isCollapsed && (
+          <span style={{fontSize:'20px', fontWeight:'bold'}}>
+            Sakura<span style={{color: '#10b981'}}>System</span>
+          </span>
+        )}
+        <button onClick={toggleCollapse} style={{background:'none', border:'none', color:'white', cursor:'pointer', fontSize:'20px'}}>
           <FaBars />
         </button>
       </div>
 
-      <nav className="sidebar-nav">
-        <ul>
-          <Link to="/dashboard" className={isActive('/dashboard')} onClick={handleLinkClick}>
-            <li>
-              <FaHome /> <span>{!isCollapsed && 'Dashboard'}</span>
+      <ul style={styles.menuList}>
+        {menuItems.map((item, index) => {
+          if (item.section) {
+            return <li key={index} style={styles.menuSection}>{item.section}</li>;
+          }
+          
+          const isActive = location.pathname === item.path;
+          
+          return (
+            <li 
+              key={index} 
+              onClick={() => navigate(item.path)} 
+              style={styles.item(isActive)}
+            >
+              <span style={{display:'flex', alignItems:'center'}}>{item.icon}</span>
+              <span style={styles.text}>{item.title}</span>
             </li>
-          </Link>
+          );
+        })}
+      </ul>
 
-          <Link to="/bens" className={isActive('/bens')} onClick={handleLinkClick}>
-            <li>
-              <FaBox /> <span>{!isCollapsed && 'Bens'}</span>
-            </li>
-          </Link>
-
-          <Link to="/unidades" className={isActive('/unidades')} onClick={handleLinkClick}>
-            <li>
-              <FaBuilding /> <span>{!isCollapsed && 'Unidades'}</span>
-            </li>
-          </Link>
-
-          <Link to="/categorias" className={isActive('/categorias')} onClick={handleLinkClick}>
-            <li>
-              <FaTags /> <span>{!isCollapsed && 'Categorias'}</span>
-            </li>
-          </Link>
-
-          <Link to="/salas" className={isActive('/salas')} onClick={handleLinkClick}>
-            <li>
-              <FaDoorOpen /> <span>{!isCollapsed && 'Salas'}</span>
-            </li>
-          </Link>
-
-          {/* --- NOVO ITEM: GESTORES --- */}
-          <Link to="/add-gestor" className={isActive('/add-gestor')} onClick={handleLinkClick}>
-            <li>
-              <FaUserTie /> <span>{!isCollapsed && 'Gestores'}</span>
-            </li>
-          </Link>
-
-        </ul>
-      </nav>
-
-      {/* Botão de Sair (Fica lá embaixo) */}
-      <div className="logout-section">
-        <button onClick={handleLogout} className="logout-btn">
-            <FaSignOutAlt /> <span>{!isCollapsed && 'Sair'}</span>
+      <div style={styles.footer}>
+        <button onClick={handleLogout} style={styles.logoutBtn}>
+          <FaSignOutAlt />
+          {!isCollapsed && <span style={{marginLeft:'10px'}}>Sair do Sistema</span>}
         </button>
       </div>
+
     </div>
   );
 }

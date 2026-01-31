@@ -1,226 +1,143 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import './Dashboard.css'; // Garante o estilo padrão
-import { FaEdit, FaTrash, FaPlus, FaArrowLeft, FaSave, FaTimes, FaTags } from 'react-icons/fa';
+import { FaLayerGroup, FaPlus, FaEdit, FaTrash, FaArrowLeft, FaSpinner } from 'react-icons/fa';
 
 function Categorias() {
-  const navigate = useNavigate();
-  
-  // Adicionar estado para o sidebar
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-
-  // Função para alternar o estado do sidebar
-  const toggleSidebar = () => {
-    setIsSidebarCollapsed(!isSidebarCollapsed);
-  };
-  
-  // Estados para dados
   const [categorias, setCategorias] = useState([]);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(window.innerWidth < 768);
   const [loading, setLoading] = useState(true);
-  
-  // Estados para controle do formulário (Adicionar/Editar)
-  const [showForm, setShowForm] = useState(false);
-  const [editingCategoria, setEditingCategoria] = useState(null); // Se null, é adição. Se tiver objeto, é edição.
-  const [nomeCategoria, setNomeCategoria] = useState('');
+  const navigate = useNavigate();
 
-  // Carregar dados iniciais
-  useEffect(() => {
-    fetchCategorias();
-  }, []);
+  const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
-  const fetchCategorias = () => {
-    setLoading(true);
+  // --- BUSCA DE DADOS (COM PROTEÇÃO CONTRA ERRO DE ROTA) ---
+  const carregarCategorias = useCallback(async () => {
     const token = localStorage.getItem('access_token');
-    
-    axios.get('http://127.0.0.1:8000/api/categorias/', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-    .then(response => {
-      setCategorias(response.data);
-      setLoading(false);
-    })
-    .catch(error => {
-      console.error("Erro ao buscar categorias:", error);
-      setLoading(false);
-    });
-  };
-
-  // Preparar para Adicionar
-  const handleClickNew = () => {
-    setEditingCategoria(null);
-    setNomeCategoria('');
-    setShowForm(true);
-  };
-
-  // Preparar para Editar
-  const handleClickEdit = (categoria) => {
-    setEditingCategoria(categoria);
-    setNomeCategoria(categoria.nome);
-    setShowForm(true);
-  };
-
-  // Salvar (POST ou PUT)
-  const handleSave = async (e) => {
-    e.preventDefault();
-    const token = localStorage.getItem('access_token');
-    const headers = { 'Authorization': `Bearer ${token}` };
+    const config = { headers: { Authorization: `Bearer ${token}` } };
     
     try {
-        if (editingCategoria) {
-            // EDITA (PUT)
-            await axios.put(`http://127.0.0.1:8000/api/categorias/${editingCategoria.id}/`, 
-                { nome: nomeCategoria }, 
-                { headers }
-            );
-            alert("Categoria atualizada com sucesso!");
-        } else {
-            // CRIA (POST)
-            await axios.post('http://127.0.0.1:8000/api/categorias/', 
-                { nome: nomeCategoria }, 
-                { headers }
-            );
-            alert("Categoria criada com sucesso!");
-        }
-        
-        // Limpeza e Refresh
-        setShowForm(false);
-        setEditingCategoria(null);
-        setNomeCategoria('');
-        fetchCategorias();
-
+      setLoading(true);
+      // Tentativa 1: Rota no plural (Padrão)
+      const response = await axios.get('http://127.0.0.1:8000/api/categorias/', config);
+      setCategorias(response.data);
     } catch (error) {
-        console.error("Erro ao salvar:", error);
-        alert("Erro ao salvar categoria.");
+      console.warn("Rota plural falhou, tentando singular...", error);
+      try {
+        // Tentativa 2: Rota no singular (Caso o backend esteja diferente)
+        const responseAlt = await axios.get('http://127.0.0.1:8000/api/categoria/', config);
+        setCategorias(responseAlt.data);
+      } catch (errAlt) {
+        console.error("Erro total ao carregar categorias.");
+      }
+    } finally {
+      setLoading(false);
     }
-  };
+  }, []);
 
-  // Excluir
-  const handleDelete = async (id) => {
+  useEffect(() => {
+    carregarCategorias();
+  }, [carregarCategorias]);
+
+  const deletarCategoria = async (id) => {
     if (window.confirm("Tem certeza que deseja excluir esta categoria?")) {
         const token = localStorage.getItem('access_token');
         try {
             await axios.delete(`http://127.0.0.1:8000/api/categorias/${id}/`, {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: { Authorization: `Bearer ${token}` }
             });
-            fetchCategorias();
+            carregarCategorias(); // Recarrega a lista
         } catch (error) {
-            alert("Erro ao excluir. Verifique se existem bens vinculados a esta categoria.");
+            alert("Erro ao excluir. Verifique se existem produtos vinculados.");
         }
     }
   };
 
+  // --- ESTILOS DE LAYOUT (A CORREÇÃO VISUAL) ---
+  const s = {
+      container: { display: 'flex', minHeight: '100vh', backgroundColor: '#f3f4f6' },
+      mainContent: {
+          flex: 1,
+          // AQUI ESTÁ A MÁGICA: Empurra o conteúdo para não ficar embaixo do menu
+          marginLeft: isSidebarCollapsed ? '80px' : '260px', 
+          padding: '30px',
+          transition: 'margin-left 0.3s ease',
+          overflowX: 'hidden'
+      },
+      header: {
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px',
+          background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)'
+      },
+      card: {
+          background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 5px rgba(0,0,0,0.05)'
+      }
+  };
+
   return (
-    <div className="dashboard-container">
+    <div style={s.container}>
       <Sidebar isCollapsed={isSidebarCollapsed} toggleCollapse={toggleSidebar} />
       
-      <main className="content">
+      <main style={s.mainContent}>
+        
         {/* CABEÇALHO */}
-        <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <div style={s.header}>
             <div>
-                <h1>Gerenciar Categorias</h1>
-                <p>Lista de categorias de bens cadastradas.</p>
+                 <h1 style={{margin:0, color:'#1f2937', display:'flex', alignItems:'center', gap:'10px', fontSize:'24px'}}>
+                    <FaLayerGroup style={{color:'#2563eb'}}/> Categorias
+                 </h1>
+                 <p style={{margin:'5px 0 0', color:'#6b7280'}}>Gerencie os departamentos da loja.</p>
             </div>
-            
-            <div style={{ display: 'flex', gap: '10px' }}>
-                <button 
-                    onClick={() => navigate('/dashboard')} 
-                    className="btn-secondary"
-                    style={{ padding: '10px 15px', borderRadius: '5px', border: '1px solid #ccc', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', background: 'white' }}
-                >
+            <div style={{display:'flex', gap:'10px'}}>
+                <button onClick={() => navigate('/dashboard')} style={{background:'white', border:'1px solid #d1d5db', color:'#374151', padding:'10px 15px', borderRadius:'8px', cursor:'pointer', display:'flex', alignItems:'center', gap:'8px'}}>
                     <FaArrowLeft /> Voltar
                 </button>
-                
-                {!showForm && (
-                    <button 
-                        onClick={handleClickNew}
-                        className="btn-primary"
-                        style={{ padding: '10px 15px', borderRadius: '5px', backgroundColor: '#007bff', color: 'white', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
-                    >
-                        <FaPlus /> Nova Categoria
-                    </button>
-                )}
+                <button onClick={() => navigate('/add-categoria')} style={{background:'#2563eb', color:'white', border:'none', padding:'10px 15px', borderRadius:'8px', cursor:'pointer', display:'flex', alignItems:'center', gap:'8px', fontWeight:'bold'}}>
+                    <FaPlus /> Nova Categoria
+                </button>
             </div>
         </div>
 
-        {/* FORMULÁRIO (Aparece condicionalmente) */}
-        {showForm && (
-            <div className="panel" style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', marginBottom: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                <h3>{editingCategoria ? 'Editar Categoria' : 'Nova Categoria'}</h3>
-                <form onSubmit={handleSave} style={{ display: 'flex', gap: '15px', alignItems: 'flex-end', marginTop: '15px' }}>
-                    <div style={{ flex: 1 }}>
-                        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Nome da Categoria</label>
-                        <input 
-                            type="text" 
-                            value={nomeCategoria}
-                            onChange={(e) => setNomeCategoria(e.target.value)}
-                            required
-                            className="form-control"
-                            style={{ width: '100%', padding: '10px', borderRadius: '5px', border: '1px solid #ccc' }}
-                            placeholder="Ex: Informática, Mobília..."
-                        />
-                    </div>
-                    <button type="submit" style={{ padding: '10px 20px', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        <FaSave /> Salvar
-                    </button>
-                    <button 
-                        type="button" 
-                        onClick={() => setShowForm(false)}
-                        style={{ padding: '10px 20px', backgroundColor: '#dc2626', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
-                    >
-                        <FaTimes /> Cancelar
-                    </button>
-                </form>
-            </div>
-        )}
-
-        {/* TABELA DE LISTAGEM */}
-        <div className="panel" style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-          {loading ? (
-             <p>Carregando categorias...</p>
-          ) : categorias.length === 0 ? (
-            <div className="empty-state" style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
-              <FaTags size={40} style={{ marginBottom: '10px', color: '#ccc' }} />
-              <p>Nenhuma categoria encontrada.</p>
-              <span>Clique em "Nova Categoria" para começar.</span>
-            </div>
-          ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid #eee', textAlign: 'left', backgroundColor: '#f9fafb' }}>
-                  <th style={{ padding: '15px', color: '#555', width: '80px' }}>ID</th>
-                  <th style={{ padding: '15px', color: '#555' }}>Nome da Categoria</th>
-                  <th style={{ padding: '15px', color: '#555', textAlign: 'center', width: '150px' }}>Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {categorias.map((cat) => (
-                  <tr key={cat.id} style={{ borderBottom: '1px solid #eee' }}>
-                    <td style={{ padding: '15px', color: '#888' }}>#{cat.id}</td>
-                    <td style={{ padding: '15px', fontWeight: 'bold', color: '#333' }}>{cat.nome}</td>
-                    <td style={{ padding: '15px', textAlign: 'center' }}>
-                        <button 
-                            onClick={() => handleClickEdit(cat)}
-                            style={{ marginRight: '10px', background: 'none', border: 'none', cursor: 'pointer', color: '#f59e0b' }}
-                            title="Editar"
-                        >
-                            <FaEdit size={18} />
-                        </button>
-                        <button 
-                            onClick={() => handleDelete(cat.id)}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }}
-                            title="Excluir"
-                        >
-                            <FaTrash size={16} />
-                        </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+        {/* LISTAGEM */}
+        <div style={s.card}>
+            {loading ? (
+                <div style={{padding:'50px', textAlign:'center', color:'#6b7280'}}>
+                    <FaSpinner className="spinner" size={30} />
+                    <p>Carregando departamentos...</p>
+                </div>
+            ) : categorias.length === 0 ? (
+                <div style={{padding:'50px', textAlign:'center', color:'#9ca3af'}}>
+                    <p>Nenhum departamento encontrado.</p>
+                </div>
+            ) : (
+                <table style={{width:'100%', borderCollapse:'collapse'}}>
+                    <thead style={{background:'#f9fafb', borderBottom:'1px solid #e5e7eb'}}>
+                        <tr>
+                            <th style={{padding:'15px', textAlign:'left', color:'#6b7280', fontSize:'13px'}}>NOME DO DEPARTAMENTO</th>
+                            <th style={{padding:'15px', textAlign:'right', color:'#6b7280', fontSize:'13px'}}>AÇÕES</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {categorias.map(cat => (
+                            <tr key={cat.id} style={{borderBottom:'1px solid #f3f4f6'}}>
+                                <td style={{padding:'15px', fontWeight:'bold', color:'#374151', textTransform:'uppercase'}}>
+                                    {cat.nome}
+                                </td>
+                                <td style={{padding:'15px', textAlign:'right'}}>
+                                    <button onClick={() => navigate(`/categorias/${cat.id}`)} style={{marginRight:'15px', background:'none', border:'none', cursor:'pointer', color:'#f59e0b'}} title="Editar">
+                                        <FaEdit size={18}/>
+                                    </button>
+                                    <button onClick={() => deletarCategoria(cat.id)} style={{background:'none', border:'none', cursor:'pointer', color:'#ef4444'}} title="Excluir">
+                                        <FaTrash size={18}/>
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            )}
         </div>
+
       </main>
     </div>
   );

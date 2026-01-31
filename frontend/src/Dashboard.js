@@ -1,274 +1,225 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import './Dashboard.css';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
-import { FaBox, FaBuilding, FaTags, FaDollarSign, FaBarcode, FaBars } from 'react-icons/fa'; // <--- Adicionei FaBarcode e FaBars aqui
+import { 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
+  PieChart, Pie, Legend 
+} from 'recharts';
+import { 
+  FaBoxOpen, FaStore, FaWarehouse, FaLayerGroup, 
+  FaCashRegister, FaUsers, FaChartLine, FaPlusCircle 
+} from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
+
+// NÃO IMPORTAMOS CSS EXTERNO, USAMOS ESTILO DIRETO
+// import './Dashboard.css'; 
 
 function Dashboard() {
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(window.innerWidth < 768);
+  
+  const [resumo, setResumo] = useState({ 
+    total_bens: 0, 
+    total_unidades: 0, 
+    total_salas: 0, 
+    total_categorias: 0 
+  });
+  const [dadosGrafico, setDadosGrafico] = useState([]);
+  
   const navigate = useNavigate();
-  const location = useLocation(); // Adicionado useLocation
-  const [bens, setBens] = useState([]);
-  const [unidades, setUnidades] = useState([]);
-  const [categorias, setCategorias] = useState([]);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(window.innerWidth < 768); // Inicializa recolhido se for mobile
 
-  console.log('Dashboard rendered. isSidebarCollapsed state:', isSidebarCollapsed);
+  const CORES_GRAFICO = ['#10b981', '#3b82f6', '#ef4444', '#f59e0b', '#8b5cf6', '#06b6d4'];
 
-  const toggleSidebar = () => {
-    setIsSidebarCollapsed(prevState => !prevState);
-  };
+  const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
   useEffect(() => {
-    if (window.innerWidth < 768) {
-      setIsSidebarCollapsed(true);
-    }
-  }, [location]);
-
-  useEffect(() => {
-    const handleResize = () => {
-      const currentWidth = window.innerWidth;
-      if (currentWidth < 768) {
-        setIsSidebarCollapsed(true);
-      } else {
-        setIsSidebarCollapsed(false);
-      }
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
+    carregarDadosReais();
   }, []);
 
-  useEffect(() => {
-    // Interceptor para renovar token se expirar
-    axios.interceptors.response.use(
-      response => response,
-      async error => {
-        const originalRequest = error.config;
-        if (error.response?.status === 401 && !originalRequest._retry) {
-          originalRequest._retry = true;
-          const refreshToken = localStorage.getItem('refresh_token');
-          if (refreshToken) {
-            try {
-                const res = await axios.post(
-                'http://127.0.0.1:8000/api/token/refresh/',
-                { refresh: refreshToken }
-                );
-                localStorage.setItem('access_token', res.data.access);
-                axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.access}`;
-                originalRequest.headers['Authorization'] = `Bearer ${res.data.access}`;
-                return axios(originalRequest);
-            } catch (err) {
-                console.error("Erro ao renovar token", err);
-                window.location.href = '/login';
-            }
-          } else {
-            window.location.href = '/login';
-          }
-        }
-        return Promise.reject(error);
-      }
-    );
-
+  const carregarDadosReais = async () => {
     const token = localStorage.getItem('access_token');
     const config = { headers: { Authorization: `Bearer ${token}` } };
 
-    axios.get('http://127.0.0.1:8000/api/bens/', config).then(res => setBens(res.data)).catch(console.error);
-    axios.get('http://127.0.0.1:8000/api/unidades/', config).then(res => setUnidades(res.data)).catch(console.error);
-    axios.get('http://127.0.0.1:8000/api/categorias/', config).then(res => setCategorias(res.data)).catch(console.error);
-  }, []); // Este useEffect é para a busca de dados e o interceptor
+    try {
+      const res = await axios.get('http://127.0.0.1:8000/api/dashboard-resumo/', config);
+      setResumo(res.data);
+    } catch (e) { console.error("Erro resumo:", e); }
 
-  // --- CÁLCULOS ---
-  const bensAtivos = bens.filter(bem => !bem.data_baixa);
+    try {
+      const resGraf = await axios.get('http://127.0.0.1:8000/api/grafico-vendas/', config);
+      if (resGraf.data && resGraf.data.length > 0 && resGraf.data[0].name !== 'Sem Vendas') {
+        setDadosGrafico(resGraf.data);
+      } else {
+        setDadosGrafico([]);
+      }
+    } catch (e) {
+      console.error("Erro gráfico:", e);
+    }
+  };
 
-  const valorTotal = bensAtivos.reduce((acc, bem) => {
-      const valorNumerico = bem.valor ? Number(bem.valor.replace(/,/g, '')) : 0;
-      return acc + (isNaN(valorNumerico) ? 0 : valorNumerico);
-  }, 0);
-
-  const dadosGrafico = categorias.map(cat => ({
-    name: cat.nome,
-    value: bensAtivos.filter(b => b.categoria === cat.id).length
-  })).filter(item => item.value > 0);
-
-  const CORES = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
-
-  const formatarData = (dataISO) => {
-    if (!dataISO) return '-';
-    const data = new Date(dataISO);
-    return data.toLocaleDateString('pt-BR');
+  // --- ESTILOS VISUAIS PARA CORRIGIR O LAYOUT ---
+  const styles = {
+    container: {
+        display: 'flex',
+        minHeight: '100vh',
+        backgroundColor: '#f3f4f6'
+    },
+    mainContent: {
+        flex: 1,
+        // ESTA É A CORREÇÃO: Empurra o conteúdo baseado no tamanho do menu
+        marginLeft: isSidebarCollapsed ? '80px' : '260px', 
+        padding: '30px',
+        transition: 'margin-left 0.3s ease',
+        overflowX: 'hidden' // Evita barra de rolagem horizontal
+    },
+    // Estilos dos Cards Coloridos
+    gridCards: {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+        gap: '20px',
+        marginBottom: '30px'
+    },
+    card: (cor1, cor2) => ({
+        padding: '20px',
+        borderRadius: '12px',
+        color: 'white',
+        background: `linear-gradient(135deg, ${cor1}, ${cor2})`,
+        boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+        height: '120px',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between'
+    }),
+    iconBg: {
+        background: 'rgba(255,255,255,0.2)', padding: '8px', borderRadius: '8px'
+    },
+    // Estilos dos Atalhos
+    gridShortcuts: {
+        display: 'flex', gap: '15px', flexWrap: 'wrap', marginBottom: '30px'
+    },
+    btnShortcut: {
+        background: 'white', padding: '15px 25px', borderRadius: '10px', 
+        border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: '10px',
+        cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+        fontWeight: '600', color: '#374151'
+    }
   };
 
   return (
-    <div className={`dashboard-container ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-      {console.log('Dashboard rendering Sidebar. isSidebarCollapsed:', isSidebarCollapsed)}
+    <div style={styles.container}>
       <Sidebar isCollapsed={isSidebarCollapsed} toggleCollapse={toggleSidebar} />
       
-      <main className={`content ${isSidebarCollapsed ? 'content-expanded' : ''}`}>
-        {/* Botão de hambúrguer para mobile */}
-        {!isSidebarCollapsed && window.innerWidth < 768 && (
-          <div className="overlay" onClick={toggleSidebar}></div>
-        )}
-        {isSidebarCollapsed && window.innerWidth < 768 && (
-          <button onClick={toggleSidebar} className="mobile-menu-btn">
-            <FaBars />
-          </button>
-        )}
-        
-        {/* CABEÇALHO COM O NOVO BOTÃO */}
-        <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <h1>Bem-vindo a Gestão Patrimonial</h1>
-              <p>Visão geral dos dados do sistema em tempo real.</p>
+      <main style={styles.mainContent}>
+        <h1 style={{marginBottom:'25px', color:'#1f2937'}}>Visão Geral do Sistema</h1>
+
+        {/* CARDS METRICAS */}
+        <div style={styles.gridCards}>
+            <div style={styles.card('#10b981', '#059669')}>
+                <div style={{display:'flex', justifyContent:'space-between'}}>
+                    <span style={{fontWeight:'bold', fontSize:'12px'}}>TOTAL DE PRODUTOS</span>
+                    <div style={styles.iconBg}><FaBoxOpen/></div>
+                </div>
+                <div style={{fontSize:'32px', fontWeight:'bold'}}>{resumo.total_bens}</div>
+                <small style={{opacity:0.8}}>Itens cadastrados</small>
             </div>
-            
-            {/* BOTÃO NOVO AQUI 👇 */}
-            <button 
-              className="btn-barcode"
-              onClick={() => alert('Funcionalidade de leitura de código de barras será implementada aqui!')}
-            >
-              <FaBarcode size={20} />
-              Ler Código de Barras
-            </button>
+
+            <div style={styles.card('#ef4444', '#dc2626')}>
+                <div style={{display:'flex', justifyContent:'space-between'}}>
+                    <span style={{fontWeight:'bold', fontSize:'12px'}}>LOJAS / FILIAIS</span>
+                    <div style={styles.iconBg}><FaStore/></div>
+                </div>
+                <div style={{fontSize:'32px', fontWeight:'bold'}}>{resumo.total_unidades}</div>
+                <small style={{opacity:0.8}}>Pontos de venda</small>
+            </div>
+
+            <div style={styles.card('#3b82f6', '#2563eb')}>
+                <div style={{display:'flex', justifyContent:'space-between'}}>
+                    <span style={{fontWeight:'bold', fontSize:'12px'}}>LOCAIS DE ESTOQUE</span>
+                    <div style={styles.iconBg}><FaWarehouse/></div>
+                </div>
+                <div style={{fontSize:'32px', fontWeight:'bold'}}>{resumo.total_salas}</div>
+                <small style={{opacity:0.8}}>Prateleiras e Depósitos</small>
+            </div>
+
+            <div style={styles.card('#06b6d4', '#0891b2')}>
+                <div style={{display:'flex', justifyContent:'space-between'}}>
+                    <span style={{fontWeight:'bold', fontSize:'12px'}}>DEPARTAMENTOS</span>
+                    <div style={styles.iconBg}><FaLayerGroup/></div>
+                </div>
+                <div style={{fontSize:'32px', fontWeight:'bold'}}>{resumo.total_categorias}</div>
+                <small style={{opacity:0.8}}>Categorias ativas</small>
+            </div>
         </div>
 
-        {/* CARDS COM NAVEGAÇÃO */}
-        <div className="cards-container">
-          
-          {/* CARD 1: TOTAL DE BENS -> Vai para /bens */}
-          <div 
-            className="card" 
-            onClick={() => navigate('/bens')} 
-            style={{ cursor: 'pointer', transition: 'transform 0.2s' }}
-            onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
-            onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-          >
-            <div className="card-icon" style={{background: '#e0f2fe', color: '#0284c7'}}>
-                <FaBox /> 
+        {/* ATALHOS */}
+        <div style={{marginBottom:'30px'}}>
+            <h4 style={{marginBottom:'15px', color:'#374151'}}>Acesso Rápido</h4>
+            <div style={styles.gridShortcuts}>
+                <div style={styles.btnShortcut} onClick={() => navigate('/vendas')}>
+                    <FaCashRegister color="#10b981" size={20}/>
+                    <span>PDV (Nova Venda)</span>
+                </div>
+                <div style={styles.btnShortcut} onClick={() => navigate('/bens')}>
+                    <FaPlusCircle color="#3b82f6" size={20}/>
+                    <span>Ver Produtos</span>
+                </div>
+                <div style={styles.btnShortcut} onClick={() => navigate('/gestores')}>
+                    <FaUsers color="#6366f1" size={20}/>
+                    <span>Gestores</span>
+                </div>
+                <div style={styles.btnShortcut} onClick={() => navigate('/financeiro')}>
+                    <FaChartLine color="#f59e0b" size={20}/>
+                    <span>Financeiro</span>
+                </div>
             </div>
-            <div className="card-info">
-                <span>Total de Bens</span>
-                <h3>{bens.length}</h3>
-            </div>
-          </div>
-
-          {/* CARD 2: UNIDADES -> Vai para /unidades */}
-          <div 
-            className="card" 
-            onClick={() => navigate('/unidades')} 
-            style={{ cursor: 'pointer', transition: 'transform 0.2s' }}
-            onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
-            onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-          >
-            <div className="card-icon" style={{background: '#dcfce7', color: '#16a34a'}}>
-                <FaBuilding />
-            </div>
-            <div className="card-info">
-                <span>Unidades</span>
-                <h3>{unidades.length}</h3>
-            </div>
-          </div>
-
-          {/* CARD 3: CATEGORIAS -> Vai para /categorias */}
-          <div 
-            className="card" 
-            onClick={() => navigate('/categorias')} 
-            style={{ cursor: 'pointer', transition: 'transform 0.2s' }}
-            onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
-            onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-          >
-            <div className="card-icon" style={{background: '#ffedd5', color: '#ea580c'}}>
-                <FaTags />
-            </div>
-            <div className="card-info">
-                <span>Categorias</span>
-                <h3>{categorias.length}</h3>
-            </div>
-          </div>
-
-          {/* CARD 4: VALOR -> Não clica (apenas informativo) */}
-          <div className="card">
-            <div className="card-icon" style={{background: '#f3e8ff', color: '#9333ea'}}>
-                <FaDollarSign />
-            </div>
-            <div className="card-info">
-                <span>Valor Estimado (Ativos)</span>
-                <h3 style={{color: '#9333ea'}}>R$ {valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
-            </div>
-          </div>
-
         </div>
 
-        {/* PARTE DE BAIXO */}
-        <div className="dashboard-bottom">
-            <div className="chart-container">
-                <h3>Bens Ativos por Categoria</h3>
-                {dadosGrafico.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={250}>
-                        <PieChart>
-                            <Pie
-                                data={dadosGrafico} cx="50%" cy="50%"
-                                innerRadius={60} outerRadius={80}
-                                paddingAngle={5} dataKey="value"
-                            >
+        {/* GRÁFICOS */}
+        <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(400px, 1fr))', gap:'20px'}}>
+            <div style={{background:'white', padding:'20px', borderRadius:'12px', boxShadow:'0 2px 5px rgba(0,0,0,0.05)'}}>
+                <div style={{marginBottom:'20px', fontWeight:'bold', color:'#374151'}}>Top Produtos Mais Vendidos</div>
+                <div style={{ width: '100%', height: 300 }}>
+                    <ResponsiveContainer>
+                        <BarChart data={dadosGrafico}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb"/>
+                            <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false}/>
+                            <YAxis stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false}/>
+                            <Tooltip cursor={{fill: '#f3f4f6'}} contentStyle={{borderRadius:'8px', border:'none'}}/>
+                            <Bar dataKey="vendas" radius={[4, 4, 0, 0]} barSize={40}>
                                 {dadosGrafico.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={CORES[index % CORES.length]} />
+                                    <Cell key={`cell-${index}`} fill={CORES_GRAFICO[index % CORES_GRAFICO.length]} />
                                 ))}
-                            </Pie>
-                            <Tooltip />
-                        </PieChart>
+                            </Bar>
+                        </BarChart>
                     </ResponsiveContainer>
-                ) : (
-                    <p style={{textAlign:'center', color:'#999', marginTop:'50px'}}>Sem bens ativos.</p>
-                )}
-                <div style={{display:'flex', justifyContent:'center', gap:'15px', fontSize:'12px', flexWrap:'wrap'}}>
-                    {dadosGrafico.map((entry, index) => (
-                        <div key={index} style={{display:'flex', alignItems:'center'}}>
-                            <div style={{width:'10px', height:'10px', backgroundColor: CORES[index % CORES.length], marginRight:'5px', borderRadius:'50%'}}></div>
-                            {entry.name}: {entry.value}
-                        </div>
-                    ))}
                 </div>
             </div>
 
-            <div className="recent-table">
-                <h3>Últimos Bens Cadastrados</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Data</th>
-                            <th>Bem</th>
-                            <th>Unidade</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {bens.slice(-5).reverse().map(bem => (
-                            <tr key={bem.id}>
-                                <td style={{color:'#666', fontSize:'13px'}}>{formatarData(bem.criado_em)}</td>
-                                <td>{bem.nome}</td>
-                                <td>{unidades.find(u => u.id === bem.unidade)?.nome || '...'}</td>
-                                <td>
-                                    {bem.data_baixa ? 
-                                        <span style={{color:'red', fontSize:'11px', fontWeight:'bold', background:'#fee2e2', padding:'2px 6px', borderRadius:'4px'}}>BAIXADO</span> : 
-                                        <span style={{color:'green', fontSize:'11px', fontWeight:'bold', background:'#dcfce7', padding:'2px 6px', borderRadius:'4px'}}>ATIVO</span>
-                                    }
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+            <div style={{background:'white', padding:'20px', borderRadius:'12px', boxShadow:'0 2px 5px rgba(0,0,0,0.05)'}}>
+                <div style={{marginBottom:'20px', fontWeight:'bold', color:'#374151'}}>Participação nas Vendas</div>
+                <div style={{ width: '100%', height: 300 }}>
+                    <ResponsiveContainer>
+                        <PieChart>
+                            <Pie
+                                data={dadosGrafico}
+                                innerRadius={70}
+                                outerRadius={90}
+                                paddingAngle={5}
+                                dataKey="vendas"
+                            >
+                                {dadosGrafico.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={CORES_GRAFICO[index % CORES_GRAFICO.length]} />
+                                ))}
+                            </Pie>
+                            <Tooltip contentStyle={{borderRadius:'8px', border:'none'}}/>
+                            <Legend layout="vertical" verticalAlign="middle" align="right" iconType="circle"/>
+                        </PieChart>
+                    </ResponsiveContainer>
+                </div>
             </div>
         </div>
       </main>
     </div>
-    );
-  }
-   
+  );
+}
 
-
-  
 export default Dashboard;

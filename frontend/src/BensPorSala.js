@@ -1,103 +1,130 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
-import { authenticatedFetch } from './auth';
 import Sidebar from './Sidebar';
-import './Dashboard.css'; // Ou um CSS específico para bens
-import { FaArrowLeft } from 'react-icons/fa';
+import { FaBox, FaArrowLeft, FaBarcode, FaMapMarkerAlt, FaSpinner } from 'react-icons/fa';
+import './Dashboard.css';
 
 function BensPorSala() {
-  const { salaId } = useParams(); // Pega o ID da sala da URL
+  const { id } = useParams();
   const navigate = useNavigate();
-
+  
   const [bens, setBens] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [salaNome, setSalaNome] = useState(''); // Para exibir o nome da sala
+  const [salaNome, setSalaNome] = useState('Carregando...');
+  const [erro, setErro] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(window.innerWidth < 768);
 
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-
-  const toggleSidebar = () => {
-    setIsSidebarCollapsed(!isSidebarCollapsed);
-  };
-
-  const fetchBensPorSala = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      // Primeiro, busca os detalhes da sala para pegar o nome
-      const salaResponse = await authenticatedFetch(`http://localhost:8000/api/salas/${salaId}/`, {}, navigate);
-      const salaData = await salaResponse.json();
-      setSalaNome(salaData.nome);
-
-      // Em seguida, busca os bens filtrados pela sala
-      const bensResponse = await authenticatedFetch(`http://localhost:8000/api/bens/?sala=${salaId}`, {}, navigate);
-      const bensData = await bensResponse.json();
-      setBens(bensData);
-    } catch (err) {
-      console.error("Failed to fetch bens for sala:", err);
-      setError("Erro ao carregar bens para esta sala.");
-    } finally {
-      setLoading(false);
-    }
-  }, [salaId, navigate]);
+  const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
   useEffect(() => {
-    fetchBensPorSala();
-  }, [fetchBensPorSala]);
+    if (id) {
+      carregarDados();
+    } else {
+      setErro("ID da sala não encontrado na URL.");
+      setIsLoading(false);
+    }
+  }, [id]);
+
+  const carregarDados = async () => {
+    const token = localStorage.getItem('access_token');
+    const config = { headers: { Authorization: `Bearer ${token}` } };
+
+    try {
+      setIsLoading(true);
+      // 1. Busca o nome da Sala
+      const respostaSala = await axios.get(`http://127.0.0.1:8000/api/salas/${id}/`, config);
+      setSalaNome(respostaSala.data.nome);
+
+      // 2. Busca os Bens FILTRANDO pela sala
+      const respostaBens = await axios.get(`http://127.0.0.1:8000/api/bens/?sala=${id}`, config);
+      setBens(respostaBens.data);
+      setErro(''); 
+    } catch (error) {
+      console.error("Erro ao buscar dados:", error);
+      setErro('Erro ao carregar bens. Verifique o servidor.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // --- ESTILOS DE LAYOUT (CORREÇÃO DEFINITIVA) ---
+  const s = {
+      container: { display: 'flex', minHeight: '100vh', backgroundColor: '#f3f4f6' },
+      mainContent: {
+          flex: 1,
+          marginLeft: isSidebarCollapsed ? '80px' : '260px', // O ajuste que resolve o corte
+          padding: '30px',
+          transition: 'margin-left 0.3s ease',
+          overflowX: 'hidden'
+      },
+      header: {
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
+          marginBottom: '20px', background: 'white', padding: '20px', borderRadius: '12px',
+          boxShadow: '0 2px 5px rgba(0,0,0,0.05)'
+      },
+      panel: {
+          background: 'white', padding: '25px', borderRadius: '12px', 
+          boxShadow: '0 2px 5px rgba(0,0,0,0.05)'
+      }
+  };
 
   return (
-    <div className="dashboard-container">
+    <div style={s.container}>
       <Sidebar isCollapsed={isSidebarCollapsed} toggleCollapse={toggleSidebar} />
-      <main className="content">
-        <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <div>
-            <h1>Bens da Sala: {salaNome}</h1>
-            <p>Lista de bens localizados nesta sala.</p>
-          </div>
-          <button 
-            onClick={() => navigate(-1)} // Volta para a página anterior
-            className="btn-secondary"
-            style={{ padding: '10px 15px', borderRadius: '5px', border: '1px solid #ccc', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', background:'white' }}
-          >
-            <FaArrowLeft /> Voltar
-          </button>
+      
+      <main style={s.mainContent}>
+        
+        <div style={s.header}>
+            <div>
+              <h1 style={{margin:0, fontSize:'24px', display:'flex', alignItems:'center', gap:'10px'}}>
+                <FaMapMarkerAlt color="#3b82f6"/> {salaNome}
+              </h1>
+              <p style={{margin:'5px 0 0', color:'#6b7280'}}>Itens localizados nesta seção.</p>
+            </div>
+            <button onClick={() => navigate('/salas')} style={{background:'white', color:'#333', border:'1px solid #ddd', padding:'10px 20px', borderRadius:'8px', cursor:'pointer', display:'flex', alignItems:'center', gap:'5px', fontWeight:'bold'}}>
+                <FaArrowLeft /> Voltar
+            </button>
         </div>
 
-        {error && (
-          <div style={{ backgroundColor: '#fee2e2', color: '#b91c1c', padding: '10px', borderRadius: '5px', marginBottom: '15px' }}>
-            {error}
-          </div>
-        )}
+        {erro && <div style={{padding:'15px', background:'#fee2e2', color:'#dc2626', borderRadius:'8px', marginBottom:'20px', border:'1px solid #fca5a5'}}>{erro}</div>}
 
-        <div className="panel" style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-          {loading ? (
-            <p>Carregando bens...</p>
-          ) : bens.length === 0 ? (
-            <p style={{ textAlign: 'center', color: '#666', padding: '20px' }}>Nenhum bem encontrado nesta sala.</p>
-          ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid #eee', textAlign: 'left', backgroundColor: '#f9fafb' }}>
-                  <th style={{ padding: '12px', color: '#555' }}>Nome do Bem</th>
-                  <th style={{ padding: '12px', color: '#555' }}>Descrição</th>
-                  <th style={{ padding: '12px', color: '#555' }}>Número de Série</th> {/* <--- Este cabeçalho */}
-                  <th style={{ padding: '12px', color: '#555' }}>Valor</th>
-                  {/* Adicione mais colunas conforme necessário */}
-                </tr>
-              </thead>
-              <tbody>
-                {bens.map(bem => (
-                  <tr key={bem.id} style={{ borderBottom: '1px solid #eee' }}>
-                    <td style={{ padding: '12px' }}>{bem.nome}</td>
-                    <td style={{ padding: '12px' }}>{bem.status}</td>
-                    <td style={{ padding: '12px' }}>{bem.tombo}</td> {/* <--- E este dado */}
-                    <td style={{ padding: '12px' }}>R$ {parseFloat(bem.valor).toFixed(2)}</td>
-                    {/* Renderize mais dados do bem aqui */}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+        <div style={s.panel}>
+            {isLoading ? (
+                <div style={{textAlign:'center', padding:'50px'}}><FaSpinner className="spinner" size={30}/> Carregando...</div>
+            ) : bens.length === 0 ? (
+                <div style={{textAlign:'center', padding:'50px', color:'#9ca3af'}}>
+                    <FaBox size={40} style={{opacity:0.2, marginBottom:'10px'}}/>
+                    <p>Nenhum bem encontrado aqui.</p>
+                </div>
+            ) : (
+                <table style={{width:'100%', borderCollapse:'collapse'}}>
+                    <thead>
+                        <tr style={{borderBottom:'2px solid #f3f4f6', textAlign:'left'}}>
+                            <th style={{padding:'15px', color:'#64748b', fontSize:'13px'}}>PRODUTO</th>
+                            <th style={{padding:'15px', color:'#64748b', fontSize:'13px'}}>CÓDIGO</th>
+                            <th style={{padding:'15px', color:'#64748b', fontSize:'13px'}}>QTD.</th>
+                            <th style={{padding:'15px', color:'#64748b', fontSize:'13px'}}>VALOR UNIT.</th>
+                            <th style={{padding:'15px', color:'#64748b', fontSize:'13px'}}>STATUS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {bens.map(bem => (
+                            <tr key={bem.id} style={{borderBottom:'1px solid #f9fafb'}}>
+                                <td style={{padding:'15px', fontWeight:'bold', color:'#374151'}}>{bem.nome}</td>
+                                <td style={{padding:'15px', fontSize:'13px', color:'#6b7280', fontFamily:'monospace'}}><FaBarcode style={{marginRight:5}}/> {bem.codigo_barras || '-'}</td>
+                                <td style={{padding:'15px', fontWeight:'bold'}}>{bem.quantidade}</td>
+                                <td style={{padding:'15px', color:'#059669', fontWeight:'bold'}}>R$ {parseFloat(bem.valor).toFixed(2)}</td>
+                                <td style={{padding:'15px'}}>
+                                    <span style={{background: bem.quantidade > 0 ? '#dcfce7' : '#fee2e2', color: bem.quantidade > 0 ? '#16a34a' : '#dc2626', padding:'4px 10px', borderRadius:'20px', fontSize:'11px', fontWeight:'bold'}}>
+                                        {bem.quantidade > 0 ? 'DISPONÍVEL' : 'ESGOTADO'}
+                                    </span>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            )}
         </div>
       </main>
     </div>

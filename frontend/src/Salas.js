@@ -1,277 +1,208 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { authenticatedFetch } from './auth';
-import Sidebar from './Sidebar'; // Importa a barra lateral
-import './Dashboard.css'; // Usa o CSS padrão do painel
-import { FaEdit, FaTrash, FaPlus, FaArrowLeft, FaSave, FaTimes } from 'react-icons/fa'; // Ícones
+import Sidebar from './Sidebar';
+import { FaWarehouse, FaPlus, FaBoxOpen, FaEdit, FaTrash, FaMapMarkerAlt, FaStore } from 'react-icons/fa';
 
 function Salas() {
-  // --- SEUS ESTADOS ORIGINAIS ---
   const [salas, setSalas] = useState([]);
+  const [unidades, setUnidades] = useState([]); // Vamos precisar da lista de lojas
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(window.innerWidth < 768);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  
-  // Controle de Edição/Adição
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [newSalaNome, setNewSalaNome] = useState('');
-  const [editingSala, setEditingSala] = useState(null);
-  const [editedSalaNome, setEditedSalaNome] = useState('');
-  
-  // Unidades
-  const [unidades, setUnidades] = useState([]);
-  const [selectedUnidade, setSelectedUnidade] = useState('');
-  
   const navigate = useNavigate();
 
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-
-  const toggleSidebar = () => {
-    setIsSidebarCollapsed(!isSidebarCollapsed);
-  };
-
-  // --- SUAS FUNÇÕES (Lógica Mantida) ---
-
-  const fetchSalas = useCallback(async () => {
-    setError(null);
-    setLoading(true);
-    try {
-      const response = await authenticatedFetch('http://localhost:8000/api/salas/', {}, navigate);
-      const data = await response.json();
-      setSalas(data);
-    } catch (err) {
-      console.error("Failed to fetch rooms:", err);
-      setError("Erro ao carregar salas.");
-    } finally {
-      setLoading(false);
-    }
-  }, [navigate]);
-
-  const fetchUnidades = useCallback(async () => {
-    try {
-      const response = await authenticatedFetch('http://localhost:8000/api/unidades/', {}, navigate);
-      const data = await response.json();
-      setUnidades(data);
-      if (data.length > 0 && !selectedUnidade) {
-        setSelectedUnidade(data[0].id);
-      }
-    } catch (err) {
-      console.error("Failed to fetch unidades:", err);
-    }
-  }, [navigate, selectedUnidade]);
+  const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
   useEffect(() => {
-    fetchSalas();
-    fetchUnidades();
-  }, [fetchSalas, fetchUnidades]);
+    carregarDados();
+  }, []);
 
-  // Função auxiliar para mostrar o nome da unidade na tabela
-  const getNomeUnidade = (id) => {
-    const unidade = unidades.find(u => u.id === id);
-    return unidade ? unidade.nome : '...';
-  };
-
-  const handleAddSala = async (e) => {
-    e.preventDefault();
-    setError(null);
+  const carregarDados = async () => {
+    const token = localStorage.getItem('access_token');
     try {
-      const response = await authenticatedFetch('http://localhost:8000/api/salas/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nome: newSalaNome, unidade: selectedUnidade }),
-      }, navigate);
-
-      if (!response.ok) throw new Error('Falha ao adicionar sala.');
-
-      setNewSalaNome('');
-      setShowAddForm(false);
-      fetchSalas();
-    } catch (err) {
-      setError(err.message);
+      // Buscamos as SALAS e as UNIDADES ao mesmo tempo
+      const [resSalas, resUnidades] = await Promise.all([
+        axios.get('http://127.0.0.1:8000/api/salas/', { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get('http://127.0.0.1:8000/api/unidades/', { headers: { Authorization: `Bearer ${token}` } })
+      ]);
+      
+      setSalas(resSalas.data);
+      setUnidades(resUnidades.data);
+      setLoading(false);
+    } catch (error) {
+      console.error("Erro ao carregar dados", error);
+      setLoading(false);
     }
   };
 
-  const handleEditClick = (sala) => {
-    setEditingSala(sala);
-    setEditedSalaNome(sala.nome);
-    setShowAddForm(false); // Fecha o form de adicionar se estiver aberto
-  };
-
-  const handleUpdateSala = async (e) => {
-    e.preventDefault();
-    setError(null);
-    try {
-      const response = await authenticatedFetch(`http://localhost:8000/api/salas/${editingSala.id}/`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nome: editedSalaNome }), // Note: Dependendo do backend, pode precisar enviar a unidade também
-      }, navigate);
-
-      if (!response.ok) throw new Error('Falha ao atualizar sala.');
-
-      setEditingSala(null);
-      setEditedSalaNome('');
-      fetchSalas();
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
-  const handleDeleteSala = async (id) => {
-    if (window.confirm('Tem certeza que deseja excluir esta sala?')) {
+  const deletarSala = async (id) => {
+    if (window.confirm("Tem certeza? Os produtos ficarão sem local definido.")) {
       try {
-        const response = await authenticatedFetch(`http://localhost:8000/api/salas/${id}/`, {
-          method: 'DELETE',
-        }, navigate);
-
-        if (!response.ok) throw new Error('Falha ao excluir sala.');
-        fetchSalas();
-      } catch (err) {
-        setError("Erro ao excluir. Verifique se há bens nesta sala.");
+        const token = localStorage.getItem('access_token');
+        await axios.delete(`http://127.0.0.1:8000/api/salas/${id}/`, {
+           headers: { Authorization: `Bearer ${token}` }
+        });
+        carregarDados();
+      } catch (error) {
+        alert("Erro ao excluir local.");
       }
     }
   };
 
-  // --- RENDERIZAÇÃO VISUAL (Novo Layout) ---
+  // --- ESTILOS DE LAYOUT ---
+  const s = {
+      container: { display: 'flex', minHeight: '100vh', backgroundColor: '#f3f4f6' },
+      mainContent: {
+          flex: 1,
+          marginLeft: isSidebarCollapsed ? '80px' : '260px',
+          padding: '30px',
+          transition: 'margin-left 0.3s ease',
+          overflowX: 'hidden'
+      },
+      header: {
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px',
+          background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)'
+      },
+      
+      // --- NOVO: Estilo do Container da Loja ---
+      lojaContainer: {
+          marginBottom: '30px',
+          background: 'white',
+          borderRadius: '12px',
+          border: '1px solid #e5e7eb',
+          overflow: 'hidden',
+          boxShadow: '0 4px 6px rgba(0,0,0,0.05)'
+      },
+      lojaHeader: {
+          background: '#1f2937',
+          color: 'white',
+          padding: '15px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px'
+      },
+      lojaContent: {
+          padding: '20px'
+      },
+
+      grid: {
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px'
+      },
+      // Estilo do Card
+      card: {
+          background: '#f8fafc', borderRadius: '12px', padding: '20px', 
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0',
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between'
+      },
+      cardHeader: {
+          display: 'flex', gap: '15px', alignItems: 'center', marginBottom: '20px'
+      },
+      iconBox: {
+          width: '50px', height: '50px', borderRadius: '10px', background: '#e0f2fe',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0284c7', fontSize: '24px'
+      },
+      actions: {
+          display: 'flex', justifyContent: 'space-between', paddingTop: '15px', borderTop: '1px solid #e2e8f0'
+      }
+  };
 
   return (
-    <div className="dashboard-container">
+    <div style={s.container}>
       <Sidebar isCollapsed={isSidebarCollapsed} toggleCollapse={toggleSidebar} />
       
-      <main className="content">
-        {/* Cabeçalho da Página */}
-        <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+      <main style={s.mainContent}>
+        
+        {/* CABEÇALHO */}
+        <div style={s.header}>
             <div>
-                <h1>Gestão de Salas</h1>
-                <p>Visualize e gerencie as salas de cada unidade.</p>
+              <h1 style={{margin:0, color:'#1f2937', display:'flex', alignItems:'center', gap:'10px'}}>
+                  <FaWarehouse style={{color:'#2563eb'}}/> Locais de Estoque
+              </h1>
+              <p style={{margin:'5px 0 0', color:'#6b7280'}}>Organização física por Loja/Filial.</p>
             </div>
-            
-            <div style={{ display: 'flex', gap: '10px' }}>
-                <button 
-                    onClick={() => navigate('/dashboard')} 
-                    className="btn-secondary"
-                    style={{ padding: '10px 15px', borderRadius: '5px', border: '1px solid #ccc', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', background:'white' }}
-                >
-                    <FaArrowLeft /> Voltar
-                </button>
-                {!showAddForm && !editingSala && (
-                    <button 
-                        onClick={() => setShowAddForm(true)}
-                        className="btn-primary"
-                        style={{ padding: '10px 15px', borderRadius: '5px', backgroundColor: '#007bff', color: 'white', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
-                    >
-                        <FaPlus /> Nova Sala
-                    </button>
-                )}
-            </div>
+            <button onClick={() => navigate('/add-sala')} style={{
+                background: '#2563eb', color: 'white', border: 'none', padding: '10px 20px', 
+                borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold'
+            }}>
+                <FaPlus /> Novo Local
+            </button>
         </div>
 
-        {error && (
-            <div style={{ backgroundColor: '#fee2e2', color: '#b91c1c', padding: '10px', borderRadius: '5px', marginBottom: '15px' }}>
-                {error}
-            </div>
-        )}
+        {/* LISTAGEM POR UNIDADE (LOJA) */}
+        {loading ? (
+            <p>Carregando...</p>
+        ) : unidades.length > 0 ? (
+            unidades.map(unidade => {
+                
+                // Filtra as salas que pertencem a esta unidade
+                const salasDaLoja = salas.filter(sala => {
+                    const idUnidadeSala = typeof sala.unidade === 'object' ? sala.unidade.id : sala.unidade;
+                    return idUnidadeSala === unidade.id;
+                });
 
-        {/* Formulário de Adição/Edição (Aparece como um cartão no topo se ativo) */}
-        {(showAddForm || editingSala) && (
-            <div className="panel" style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', marginBottom: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                <h3>{editingSala ? 'Editar Sala' : 'Adicionar Nova Sala'}</h3>
-                <form onSubmit={editingSala ? handleUpdateSala : handleAddSala} style={{ display: 'flex', gap: '15px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
-                    
-                    <div style={{ flex: 1, minWidth: '200px' }}>
-                        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Nome da Sala</label>
-                        <input
-                            type="text"
-                            value={editingSala ? editedSalaNome : newSalaNome}
-                            onChange={(e) => editingSala ? setEditedSalaNome(e.target.value) : setNewSalaNome(e.target.value)}
-                            required
-                            className="form-control" // Usa estilo do bootstrap se tiver, ou dashboard.css
-                            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
-                        />
-                    </div>
-
-                    {/* Mostra seletor de unidade apenas ao criar (ou edite a lógica se quiser mudar unidade na edição) */}
-                    {!editingSala && (
-                        <div style={{ flex: 1, minWidth: '200px' }}>
-                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Unidade</label>
-                            <select
-                                value={selectedUnidade}
-                                onChange={(e) => setSelectedUnidade(e.target.value)}
-                                required
-                                style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
-                            >
-                                {unidades.map(u => (
-                                    <option key={u.id} value={u.id}>{u.nome}</option>
-                                ))}
-                            </select>
+                return (
+                    <div key={unidade.id} style={s.lojaContainer}>
+                        {/* Faixa Preta com Nome da Loja */}
+                        <div style={s.lojaHeader}>
+                            <FaStore size={18} />
+                            <h2 style={{margin:0, fontSize:'18px', fontWeight:'600'}}>{unidade.nome}</h2>
+                            <span style={{marginLeft:'auto', fontSize:'12px', background:'rgba(255,255,255,0.2)', padding:'4px 8px', borderRadius:'10px'}}>
+                                {salasDaLoja.length} locais
+                            </span>
                         </div>
-                    )}
 
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                        <button type="submit" style={{ padding: '8px 15px', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', display:'flex', alignItems:'center', gap:'5px' }}>
-                            <FaSave /> Salvar
-                        </button>
-                        <button 
-                            type="button" 
-                            onClick={() => { setShowAddForm(false); setEditingSala(null); }}
-                            style={{ padding: '8px 15px', backgroundColor: '#dc2626', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', display:'flex', alignItems:'center', gap:'5px' }}
-                        >
-                            <FaTimes /> Cancelar
-                        </button>
+                        {/* Grade de Salas desta Loja */}
+                        <div style={s.lojaContent}>
+                            {salasDaLoja.length > 0 ? (
+                                <div style={s.grid}>
+                                    {salasDaLoja.map(sala => (
+                                        <div key={sala.id} style={s.card}>
+                                            <div style={s.cardHeader}>
+                                                <div style={s.iconBox}>
+                                                    <FaMapMarkerAlt />
+                                                </div>
+                                                <div>
+                                                    <h3 style={{margin:0, fontSize:'16px', color:'#374151'}}>{sala.nome}</h3>
+                                                    <span style={{fontSize:'12px', color:'#64748b'}}>ID: {sala.id}</span>
+                                                </div>
+                                            </div>
+
+                                            <div style={s.actions}>
+                                                
+                                                {/* --- MOSTRAR QUANTIDADE DE ITENS --- */}
+                                                <button onClick={() => navigate(`/salas/${sala.id}/bens`)} style={{background:'none', border:'none', color:'#0ea5e9', cursor:'pointer', display:'flex', alignItems:'center', gap:'5px', fontWeight:'bold', fontSize:'13px'}}>
+                                                    <FaBoxOpen /> 
+                                                    {/* Mostra '0' se não tiver nada, ou o número se tiver */}
+                                                    {sala.qtd_itens || 0} Itens
+                                                </button>
+
+                                                <div style={{display:'flex', gap:'10px'}}>
+                                                    <button onClick={() => navigate(`/salas/${sala.id}`)} style={{background:'#fef3c7', border:'none', color:'#d97706', cursor:'pointer', padding:'6px 10px', borderRadius:'6px', display:'flex', alignItems:'center', gap:'5px'}}>
+                                                        <FaEdit />
+                                                    </button>
+                                                    <button onClick={() => deletarSala(sala.id)} style={{background:'#fee2e2', border:'none', color:'#ef4444', cursor:'pointer', padding:'6px 10px', borderRadius:'6px'}}>
+                                                        <FaTrash />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p style={{textAlign:'center', color:'#9ca3af', fontStyle:'italic', margin:0}}>
+                                    Nenhuma prateleira ou local cadastrado nesta loja.
+                                </p>
+                            )}
+                        </div>
                     </div>
-                </form>
+                );
+            })
+        ) : (
+            <div style={{textAlign:'center', padding:'40px', color:'#6b7280'}}>
+                Nenhuma loja encontrada. Cadastre unidades primeiro.
             </div>
         )}
 
-        {/* Tabela de Listagem */}
-        <div className="panel" style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-            {loading ? (
-                <p>Carregando...</p>
-            ) : salas.length === 0 ? (
-                <p style={{ textAlign: 'center', color: '#666', padding: '20px' }}>Nenhuma sala cadastrada.</p>
-            ) : (
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                        <tr style={{ borderBottom: '2px solid #eee', textAlign: 'left', backgroundColor: '#f9fafb' }}>
-                            <th style={{ padding: '12px', color: '#555' }}>Nome da Sala</th>
-                            <th style={{ padding: '12px', color: '#555' }}>Unidade</th>
-                            <th style={{ padding: '12px', color: '#555', textAlign: 'center', width: '150px' }}>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {salas.map(sala => (
-                            <tr 
-                                key={sala.id} 
-                                style={{ borderBottom: '1px solid #eee', cursor: 'pointer' }}
-                                onClick={() => navigate(`/salas/${sala.id}/bens`)} // Use navigate diretamente aqui
-                            >
-                                <td style={{ padding: '12px' }}>{sala.nome}</td>
-                                <td style={{ padding: '12px' }}>
-                                    <span style={{ backgroundColor: '#e0f2fe', color: '#0284c7', padding: '2px 8px', borderRadius: '4px', fontSize: '13px', fontWeight: 'bold' }}>
-                                        {getNomeUnidade(sala.unidade)}
-                                    </span>
-                                </td>
-                                <td style={{ padding: '12px', textAlign: 'center' }}>
-                                    <button 
-                                        onClick={(e) => { e.stopPropagation(); handleEditClick(sala); }}
-                                        style={{ marginRight: '10px', background: 'none', border: 'none', cursor: 'pointer', color: '#f59e0b' }}
-                                        title="Editar"
-                                    >
-                                        <FaEdit size={18} />
-                                    </button>
-                                    <button 
-                                        onClick={(e) => { e.stopPropagation(); handleDeleteSala(sala.id); }}
-                                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626' }}
-                                        title="Excluir"
-                                    >
-                                        <FaTrash size={18} />
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            )}
-        </div>
       </main>
     </div>
   );

@@ -1,0 +1,98 @@
+/* src/components/Ticket.css */
+
+/* Fundo escuro para destacar o modal na tela */
+.ticket-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+/* O visual do papel do recibo na tela */
+.ticket-paper {
+    background: #fffbe6; /* Um leve tom amarelado de papel térmico */
+    width: 300px; /* Largura padrão de impressora térmica */
+    padding: 20px;
+    font-family: 'Courier New', Courier, monospace; /* Fonte monoespaçada clássica */
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    color: #000;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* Linhas tracejadas separadoras */
+.ticket-divider {
+    border-top: 1px dashed #000;
+    margin: 10px 0;
+}
+
+.ticket-header {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.ticket-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    margin-bottom: 5px;
+}
+
+.ticket-total {
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+    font-size: 16px;
+    margin-top: 10px;
+}
+
+/* Botões de Ação (não aparecem na impressão) */
+.ticket-actions {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+/* --- A MÁGICA DA IMPRESSÃO --- */
+@media print {
+    /* Esconde TUDO que não seja o ticket */
+    body * {
+        visibility: hidden;
+    }
+    
+    /* Mostra só o conteúdo do ticket */
+    .ticket-paper, .ticket-paper * {
+        visibility: visible;
+    }
+
+    /* Posiciona o ticket no topo da folha */
+    .ticket-paper {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        box-shadow: none;
+        background: white;
+        overflow: visible;
+    }
+
+    /* Esconde os botões de imprimir/fechar na hora H */
+    .ticket-actions {
+        display: none;
+    }
+    
+    /* Esconde o fundo escuro */
+    .ticket-overlay {
+        background: none;
+        position: absolute;
+    }
+}

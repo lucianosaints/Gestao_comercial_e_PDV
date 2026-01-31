@@ -1,205 +1,286 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import './Dashboard.css';
-import { FaArrowLeft, FaSave, FaBuilding, FaExchangeAlt, FaInfoCircle } from 'react-icons/fa';
+import { FaBox, FaSave, FaArrowLeft, FaTruck, FaCamera, FaSpinner } from 'react-icons/fa';
+// Não dependemos mais do CSS externo para o layout principal
+import './Dashboard.css'; 
 
 function EditBem() {
   const { id } = useParams();
   const navigate = useNavigate();
-  
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(window.innerWidth < 768);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Estados para as listas
   const [unidades, setUnidades] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [salas, setSalas] = useState([]);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false); // Adicionar estado para o sidebar
+  const [fornecedores, setFornecedores] = useState([]);
 
-  // Estado com todos os campos do Bem
+  // Estados Imagem
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [novaImagemFile, setNovaImagemFile] = useState(null);
+
+  // Estado Formulário
   const [formData, setFormData] = useState({
-    nome: '', descricao: '', tombo: '', valor: '',
-    situacao: 'RECUPERAVEL', estado_conservacao: 'EXCELENTE',
-    origem: 'PROPRIO', categoria: '', unidade: '', sala: ''
+    nome: '', descricao: '', codigo_barras: '', valor: '', quantidade: 0,
+    unidade: '', categoria: '', sala: '', fornecedor: '',
+    preco_custo: '', margem_lucro: ''
   });
 
-  useEffect(() => {
-    carregarDadosAuxiliares();
-    carregarBem();
-  }, [id]);
-
-  // Efeito cascata: Quando muda a Unidade, busca as Salas dela
-  useEffect(() => {
-    if (formData.unidade) {
-        fetchSalas(formData.unidade);
-    } else {
-        setSalas([]);
-    }
-  }, [formData.unidade]);
-
-  const carregarDadosAuxiliares = async () => {
+  // Função de Carga
+  const carregarDados = useCallback(async () => {
     const token = localStorage.getItem('access_token');
+    const config = { headers: { Authorization: `Bearer ${token}` } };
+
     try {
-        const [resUnidades, resCats] = await Promise.all([
-            axios.get('http://127.0.0.1:8000/api/unidades/', { headers: { Authorization: `Bearer ${token}` } }),
-            axios.get('http://127.0.0.1:8000/api/categorias/', { headers: { Authorization: `Bearer ${token}` } })
-        ]);
-        setUnidades(resUnidades.data);
-        setCategorias(resCats.data);
-    } catch (error) { console.error("Erro", error); }
-  };
+      setIsLoading(true);
+      const [resUni, resCat, resSalas, resForn] = await Promise.all([
+        axios.get('http://127.0.0.1:8000/api/unidades/', config),
+        axios.get('http://127.0.0.1:8000/api/categorias/', config),
+        axios.get('http://127.0.0.1:8000/api/salas/', config),
+        axios.get('http://127.0.0.1:8000/api/fornecedores/', config)
+      ]);
 
-  const fetchSalas = async (unidadeId) => {
-      const token = localStorage.getItem('access_token');
-      try {
-          const response = await axios.get(`http://127.0.0.1:8000/api/salas/?unidade=${unidadeId}`, {
-              headers: { Authorization: `Bearer ${token}` }
-          });
-          setSalas(response.data);
-      } catch (error) { console.error("Erro salas", error); }
-  };
+      setUnidades(resUni.data);
+      setCategorias(resCat.data);
+      setSalas(resSalas.data);
+      setFornecedores(resForn.data);
 
-  const carregarBem = async () => {
-      const token = localStorage.getItem('access_token');
-      try {
-          const response = await axios.get(`http://127.0.0.1:8000/api/bens/${id}/`, {
-              headers: { Authorization: `Bearer ${token}` }
-          });
-          const bem = response.data;
-          setFormData({
-              nome: bem.nome, descricao: bem.descricao || '', tombo: bem.tombo, valor: bem.valor || '',
-              situacao: bem.situacao, estado_conservacao: bem.estado_conservacao, origem: bem.origem,
-              categoria: bem.categoria, unidade: bem.unidade, sala: bem.sala || ''
-          });
-      } catch (error) { alert("Erro ao carregar bem"); navigate('/bens'); }
+      const response = await axios.get(`http://127.0.0.1:8000/api/bens/${id}/`, config);
+      const produto = response.data;
+
+      setFormData({
+        nome: produto.nome,
+        descricao: produto.descricao || '',
+        codigo_barras: produto.codigo_barras || '',
+        valor: produto.valor,
+        quantidade: produto.quantidade,
+        unidade: produto.unidade,
+        categoria: produto.categoria,
+        sala: produto.sala || '',
+        fornecedor: produto.fornecedor || '',
+        preco_custo: produto.preco_custo || '',
+        margem_lucro: produto.margem_lucro || ''
+      });
+
+      if (produto.imagem) {
+          const imgUrl = produto.imagem.startsWith('http') ? produto.imagem : `http://127.0.0.1:8000${produto.imagem}`;
+          setPreviewUrl(imgUrl);
+      }
+
+    } catch (error) {
+      console.error("Erro ao carregar produto:", error);
+      alert("Erro ao carregar dados do produto.");
+      navigate('/bens');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id, navigate]);
+
+  useEffect(() => {
+    carregarDados();
+  }, [carregarDados]);
+
+  const calcularPrecoFinal = (custo, margem) => {
+    const valorCusto = parseFloat(custo) || 0;
+    const valorMargem = parseFloat(margem) || 0;
+    return (valorCusto + (valorCusto * (valorMargem / 100))).toFixed(2);
   };
 
   const handleChange = (e) => {
-      const { name, value } = e.target;
-      if (name === 'unidade') {
-          // Lógica de Segurança: Mudou a unidade? Limpa a sala para evitar inconsistência.
-          setFormData(prev => ({ ...prev, [name]: value, sala: '' }));
-      } else {
-          setFormData(prev => ({ ...prev, [name]: value }));
-      }
+    const { name, value, files } = e.target;
+    
+    if (name === 'imagem') {
+        const arquivo = files[0];
+        if (arquivo) {
+            setNovaImagemFile(arquivo);
+            setPreviewUrl(URL.createObjectURL(arquivo));
+        }
+    } else if (name === 'unidade') {
+        setFormData({ ...formData, unidade: value, sala: '' });
+    } else if (name === 'preco_custo' || name === 'margem_lucro') {
+        const novoCusto = name === 'preco_custo' ? value : formData.preco_custo;
+        const novaMargem = name === 'margem_lucro' ? value : formData.margem_lucro;
+        setFormData({
+            ...formData,
+            [name]: value,
+            valor: calcularPrecoFinal(novoCusto, novaMargem)
+        });
+    } else {
+        setFormData({ ...formData, [name]: value });
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem('access_token');
-    // Envia null se a sala for vazia
-    const payload = { ...formData, sala: formData.sala === '' ? null : formData.sala };
+    const data = new FormData();
+    
+    for (const key in formData) {
+        if (formData[key] !== null && formData[key] !== undefined) {
+            data.append(key, formData[key]);
+        }
+    }
+
+    if (novaImagemFile) {
+        data.append('imagem', novaImagemFile);
+    }
 
     try {
-      await axios.put(`http://127.0.0.1:8000/api/bens/${id}/`, payload, {
-        headers: { Authorization: `Bearer ${token}` }
+      await axios.put(`http://127.0.0.1:8000/api/bens/${id}/`, data, {
+        headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+        }
       });
-      alert('Bem atualizado/movimentado com sucesso!');
+      alert('Produto atualizado com sucesso!');
       navigate('/bens');
-    } catch (error) { alert('Erro ao atualizar bem.'); }
+    } catch (error) {
+      console.error("Erro ao atualizar:", error.response ? error.response.data : error);
+      alert('Erro ao atualizar produto.');
+    }
   };
 
-  // Função para alternar o estado do sidebar
-  const toggleSidebar = () => {
-    setIsSidebarCollapsed(!isSidebarCollapsed);
+  // --- ESTILOS DE LAYOUT (A CORREÇÃO MÁGICA) ---
+  const s = {
+      container: { display: 'flex', minHeight: '100vh', backgroundColor: '#f3f4f6' },
+      mainContent: {
+          flex: 1,
+          marginLeft: isSidebarCollapsed ? '80px' : '260px', // AQUI GARANTE QUE NÃO FICA EM CIMA
+          padding: '30px',
+          transition: 'margin-left 0.3s ease',
+          overflowX: 'hidden'
+      }
   };
+
+  if (isLoading) {
+      return <div style={{display:'flex', justifyContent:'center', marginTop:'50px'}}><FaSpinner className="spinner" size={30}/> Carregando...</div>;
+  }
 
   return (
-    <div className="dashboard-container">
-      <Sidebar isCollapsed={isSidebarCollapsed} toggleCollapse={toggleSidebar} />
-      <main className="content">
-        <div className="page-header" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-             <button onClick={() => navigate('/bens')} style={{ border:'none', background:'none', cursor:'pointer', fontSize:'20px' }}><FaArrowLeft /></button>
-             <h1>Editar / Transferir Bem</h1>
+    <div style={s.container}>
+      <Sidebar isCollapsed={isSidebarCollapsed} toggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
+      
+      <main style={s.mainContent}>
+        <div style={{display:'flex', alignItems:'center', gap:'15px', marginBottom:'20px'}}>
+            <button onClick={() => navigate('/bens')} style={{border:'none', background:'none', fontSize:'20px', cursor:'pointer', color:'#6b7280'}}>
+                <FaArrowLeft />
+            </button>
+            <h1 style={{fontSize:'24px', margin:0, color: '#1f2937'}}>Editar Produto</h1>
         </div>
 
-        <div className="panel" style={{ backgroundColor: 'white', padding: '30px', borderRadius: '8px' }}>
-            <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} style={{background:'white', padding:'30px', borderRadius:'12px', boxShadow:'0 2px 5px rgba(0,0,0,0.05)'}}>
+            
+            <h3 style={{color:'#3b82f6', marginBottom:'15px', display:'flex', alignItems:'center', gap:'8px'}}>
+                <FaBox /> Dados Principais
+            </h3>
+            
+            <div style={{display:'flex', gap:'20px', marginBottom:'20px', flexWrap:'wrap'}}>
+                <div style={{flex: 2, minWidth:'250px'}}>
+                    <label className="form-label">Nome do Produto</label>
+                    <input type="text" name="nome" className="form-input" required value={formData.nome} onChange={handleChange} />
+                </div>
+                <div style={{flex: 1, minWidth:'150px'}}>
+                    <label className="form-label">Código de Barras / SKU</label>
+                    <input type="text" name="codigo_barras" className="form-input" value={formData.codigo_barras} onChange={handleChange} />
+                </div>
+            </div>
+
+            {/* ÁREA DA IMAGEM */}
+            <div style={{marginBottom: '25px'}}>
+                <label className="form-label" style={{display: 'block', marginBottom: '8px', fontWeight: 'bold', color:'#374151'}}>Imagem do Produto</label>
                 
-                {/* Linha 1: Identificação Básica */}
-                <div style={{ display: 'flex', gap: '20px', marginBottom: '15px' }}>
-                    <div style={{ flex: 2 }}>
-                        <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>Nome do Bem</label>
-                        <input type="text" name="nome" value={formData.nome} onChange={handleChange} className="form-control" required style={{ width: '100%', padding: '10px' }} />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                        <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>Tombo (Fixo)</label>
-                        <input type="text" name="tombo" value={formData.tombo} readOnly className="form-control" style={{ width: '100%', padding: '10px', backgroundColor: '#e9ecef', color: '#666' }} />
-                    </div>
-                </div>
-
-                {/* ÁREA DE TRANSFERÊNCIA (Destacada) */}
-                <div style={{ backgroundColor: '#f0f9ff', padding: '20px', borderRadius: '8px', marginBottom: '25px', border: '1px solid #bae6fd' }}>
-                    <h4 style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '10px', color: '#0369a1' }}>
-                        <FaExchangeAlt /> Movimentação do Bem (Transferência)
-                    </h4>
-                    <p style={{ fontSize: '13px', color: '#555', marginBottom: '15px' }}>
-                        Para transferir o bem, selecione a nova Unidade. As salas serão atualizadas automaticamente.
-                    </p>
-                    <div style={{ display: 'flex', gap: '20px' }}>
-                        <div style={{ flex: 1 }}>
-                            <label style={{ fontWeight: 'bold' }}>Unidade de Destino</label>
-                            <select name="unidade" value={formData.unidade} onChange={handleChange} className="form-control" required style={{ width: '100%', padding: '10px' }}>
-                                <option value="">Selecione...</option>
-                                {unidades.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}
-                            </select>
+                <div style={{display:'flex', gap:'20px', alignItems:'flex-start', flexWrap:'wrap'}}>
+                    <label style={{flex: 1, minWidth:'200px', display: 'flex', flexDirection:'column', alignItems: 'center', gap: '10px', cursor: 'pointer', background: '#f8fafc', padding: '20px', borderRadius: '8px', border: '2px dashed #cbd5e1', justifyContent:'center', textAlign:'center', transition:'all 0.2s'}}>
+                        <FaCamera size={30} color="#64748b" />
+                        <div style={{color: '#475569', fontWeight: '600'}}>
+                            {previewUrl ? "Clique para alterar a foto" : "Clique para adicionar uma foto"}
                         </div>
-                        <div style={{ flex: 1 }}>
-                            <label style={{ fontWeight: 'bold' }}>Nova Sala</label>
-                            <select name="sala" value={formData.sala} onChange={handleChange} className="form-control" style={{ width: '100%', padding: '10px' }} disabled={!formData.unidade}>
-                                <option value="">Selecione...</option>
-                                {salas.map(s => <option key={s.id} value={s.id}>{s.nome}</option>)}
-                            </select>
+                        <input type="file" name="imagem" accept="image/*" onChange={handleChange} style={{display: 'none'}} />
+                    </label>
+
+                    {previewUrl && (
+                        <div style={{flex: 1, minWidth:'200px', display: 'flex', justifyContent: 'center', alignItems:'center', background:'#f1f5f9', padding:'10px', borderRadius:'8px', border:'1px solid #e2e8f0', height:'150px'}}>
+                            <img src={previewUrl} alt="Preview" style={{maxWidth: '100%', maxHeight: '100%', borderRadius: '4px', objectFit:'contain'}} />
                         </div>
-                    </div>
+                    )}
                 </div>
+            </div>
 
-                {/* Linha 3: Detalhes Técnicos */}
-                <h4 style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#555', marginTop: '0' }}><FaInfoCircle /> Detalhes do Bem</h4>
-                <div style={{ display: 'flex', gap: '20px', marginBottom: '15px' }}>
-                    <div style={{ flex: 1 }}>
-                        <label>Categoria</label>
-                        <select name="categoria" value={formData.categoria} onChange={handleChange} className="form-control" required style={{ width: '100%', padding: '10px' }}>
-                            <option value="">Selecione...</option>
-                            {categorias.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
-                        </select>
+            {/* FORMAÇÃO DE PREÇO */}
+            <div style={{background:'#eff6ff', padding:'20px', borderRadius:'8px', marginBottom:'25px', border:'1px solid #dbeafe'}}>
+                <h4 style={{margin:'0 0 15px 0', color:'#1e40af'}}>Formação de Preço</h4>
+                <div style={{display:'flex', gap:'20px', flexWrap:'wrap', alignItems:'flex-end'}}>
+                    <div style={{flex:1}}>
+                        <label className="form-label">Preço de Custo (R$)</label>
+                        <input type="number" name="preco_custo" className="form-input" value={formData.preco_custo} onChange={handleChange} />
                     </div>
-                    <div style={{ flex: 1 }}>
-                        <label>Situacao</label>
-                        <select name="situacao" value={formData.situacao} onChange={handleChange} className="form-control" style={{ width: '100%', padding: '10px' }}>
-                            <option value="RECUPERAVEL">Recuperável</option>
-                            <option value="ANTIECONOMICO">Antieconômico</option>
-                            <option value="IRRECUPERAVEL">Irrecuperável</option>
-                            <option value="OCIOSO">Ocioso</option>
-                        </select>
+                    <div style={{flex:1}}>
+                        <label className="form-label">Margem de Lucro (%)</label>
+                        <input type="number" name="margem_lucro" className="form-input" value={formData.margem_lucro} onChange={handleChange} />
                     </div>
-                    <div style={{ flex: 1 }}>
-                         <label>Origem</label>
-                         <select name="origem" value={formData.origem} onChange={handleChange} className="form-control" style={{ width: '100%', padding: '10px' }}>
-                            <option value="PROPRIO">Próprio</option>
-                            <option value="DOACAO">Doação</option>
-                            <option value="ALUGADO">Alugado</option>
-                        </select>
+                    <div style={{flex:1}}>
+                        <label className="form-label" style={{color:'#059669', fontWeight:'bold'}}>Preço Final (R$)</label>
+                        <input type="number" name="valor" className="form-input" style={{borderColor:'#10b981', background:'#ecfdf5', fontWeight:'bold', color:'#064e3b'}} value={formData.valor} onChange={handleChange} required />
                     </div>
                 </div>
+            </div>
 
-                {/* Linha 4: Valor e Descrição */}
-                <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
-                    <div style={{ flex: 1 }}>
-                        <label>Valor (R$)</label>
-                        <input type="number" step="0.01" name="valor" value={formData.valor} onChange={handleChange} className="form-control" style={{ width: '100%', padding: '10px' }} />
-                    </div>
-                    <div style={{ flex: 2 }}>
-                        <label>Descrição Detalhada</label>
-                        <input type="text" name="descricao" value={formData.descricao} onChange={handleChange} className="form-control" style={{ width: '100%', padding: '10px' }} />
-                    </div>
-                </div>
+            <h3 style={{color:'#3b82f6', marginBottom:'15px', marginTop:'30px', display:'flex', alignItems:'center', gap:'8px'}}>
+                <FaTruck /> Estoque e Origem
+            </h3>
 
-                <div style={{ borderTop: '1px solid #eee', paddingTop: '20px', display: 'flex', justifyContent: 'flex-end' }}>
-                    <button type="submit" className="btn-primary" style={{ padding: '12px 25px', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px' }}>
-                        <FaSave /> Salvar Alterações
-                    </button>
+            <div style={{display:'flex', gap:'20px', marginBottom:'20px', flexWrap:'wrap'}}>
+                 <div style={{flex: 1, minWidth:'200px'}}>
+                    <label className="form-label">Fornecedor</label>
+                    <select name="fornecedor" className="form-input" value={formData.fornecedor} onChange={handleChange}>
+                        <option value="">Selecione...</option>
+                        {fornecedores.map(f => <option key={f.id} value={f.id}>{f.nome}</option>)}
+                    </select>
                 </div>
-            </form>
-        </div>
+                <div style={{flex: 1, minWidth:'200px'}}>
+                    <label className="form-label">Loja / Filial</label>
+                    <select name="unidade" className="form-input" required value={formData.unidade} onChange={handleChange}>
+                        <option value="">Selecione...</option>
+                        {unidades.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}
+                    </select>
+                </div>
+                <div style={{flex: 1, minWidth:'200px'}}>
+                    <label className="form-label">Localização</label>
+                    <select name="sala" className="form-input" value={formData.sala} onChange={handleChange}>
+                        <option value="">Selecione a Loja primeiro</option>
+                        {salas.filter(s => s.unidade.toString() === formData.unidade.toString()).map(s => <option key={s.id} value={s.id}>{s.nome}</option>)}
+                    </select>
+                </div>
+            </div>
+
+            <div style={{display:'flex', gap:'20px', marginBottom:'20px'}}>
+                <div style={{flex: 1}}>
+                    <label className="form-label">Categoria</label>
+                    <select name="categoria" className="form-input" required value={formData.categoria} onChange={handleChange}>
+                        <option value="">Selecione...</option>
+                        {categorias.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                    </select>
+                </div>
+                <div style={{flex: 1}}>
+                    <label className="form-label">Qtd. em Estoque</label>
+                    <input type="number" name="quantidade" className="form-input" required value={formData.quantidade} onChange={handleChange} />
+                </div>
+            </div>
+
+            <hr style={{margin:'30px 0', border:'0', borderTop:'1px solid #e5e7eb'}}/>
+
+            <div style={{display:'flex', justifyContent:'flex-end'}}>
+                <button type="submit" style={{
+                    background:'#2563eb', color:'white', padding:'12px 25px', borderRadius:'8px', border:'none', 
+                    fontSize:'16px', fontWeight:'bold', cursor:'pointer', display:'flex', alignItems:'center', gap:'8px'
+                }}>
+                    <FaSave /> Atualizar Produto
+                </button>
+            </div>
+        </form>
       </main>
     </div>
   );

@@ -1,8 +1,7 @@
-from rest_framework import serializers, status
-from rest_framework.generics import GenericAPIView
-from rest_framework.response import Response    
+from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Unidade, Categoria, Bem, Gestor, Sala, Historico
+# Importando todas as tabelas (incluindo a Despesa nova)
+from .models import Unidade, Categoria, Bem, Gestor, Sala, Historico, Venda, ItemVenda, Fornecedor, Despesa
 
 class DashboardResumoSerializer(serializers.Serializer):
     total_bens = serializers.IntegerField()
@@ -10,30 +9,6 @@ class DashboardResumoSerializer(serializers.Serializer):
     total_categorias = serializers.IntegerField()
     total_salas = serializers.IntegerField()
     total_gestores = serializers.IntegerField()
-
-class DashboardResumoView(GenericAPIView):
-    serializer_class = DashboardResumoSerializer
-
-    def get(self, request):
-        data = {
-            'total_bens': Bem.objects.count(),
-            'total_unidades': Unidade.objects.count(),
-            'total_categorias': Categoria.objects.count(),
-            'total_salas': Sala.objects.count(),
-            'total_gestores': Gestor.objects.count(),
-        }
-        return Response(data, status=status.HTTP_200_OK)
-        
-dashboard_resumo = DashboardResumoView.as_view()
-        
-
-# --- HISTÓRICO (Necessário para o rastreamento) ---
-class HistoricoSerializer(serializers.ModelSerializer):
-    usuario_nome = serializers.CharField(source='usuario.username', read_only=True)
-    
-    class Meta:
-        model = Historico
-        fields = ['id', 'descricao', 'data', 'usuario_nome']
 
 class UnidadeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -45,68 +20,91 @@ class CategoriaSerializer(serializers.ModelSerializer):
         model = Categoria
         fields = '__all__'
 
-# --- SALA (Com o nome da unidade para facilitar o front) ---
+# --- AQUI ESTÁ A ALTERAÇÃO ---
 class SalaSerializer(serializers.ModelSerializer):
     unidade_nome = serializers.CharField(source='unidade.nome', read_only=True)
+    # Conta quantos 'bens' existem vinculados a esta sala
+    qtd_itens = serializers.IntegerField(source='bem_set.count', read_only=True)
 
     class Meta:
         model = Sala
-        fields = ['id', 'nome', 'unidade', 'unidade_nome'] # Adicionado 'unidade_nome' explicitamente
+        # Definimos explicitamente para garantir que o qtd_itens apareça
+        fields = ['id', 'nome', 'unidade', 'unidade_nome', 'qtd_itens']
 
-# --- BEM (Agora inclui o Histórico e nomes legíveis) ---
+class HistoricoSerializer(serializers.ModelSerializer):
+    usuario_nome = serializers.CharField(source='usuario.username', read_only=True)
+    class Meta:
+        model = Historico
+        fields = ['id', 'descricao', 'data', 'usuario_nome']
+
+class FornecedorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Fornecedor
+        fields = '__all__'
+
 class BemSerializer(serializers.ModelSerializer):
-    # Campos extras de leitura para facilitar o Front-end
     categoria_nome = serializers.CharField(source='categoria.nome', read_only=True)
     unidade_nome = serializers.CharField(source='unidade.nome', read_only=True)
-    sala_nome = serializers.CharField(source='sala.nome', read_only=True)
-    
-    # Aqui está a mágica: Traz o histórico junto com o bem
+    sala_nome = serializers.CharField(source='sala.nome', read_only=True, allow_null=True)
+    fornecedor_nome = serializers.CharField(source='fornecedor.nome', read_only=True)
     historico = HistoricoSerializer(many=True, read_only=True)
-
+    
     class Meta:
         model = Bem
-        fields = [
-            'id', 'nome', 'descricao', 'tombo', 'numero_serie', 'valor',
-            'situacao', 'estado_conservacao', 'origem', 'data_baixa',
-            'obs_baixa', 'categoria', 'unidade', 'sala', 'criado_em',
-            'categoria_nome', 'unidade_nome', 'sala_nome', 'historico'
-        ]
+        fields = '__all__'
 
-# --- GESTOR (Mantida a SUA lógica original que cria usuários) ---
 class GestorSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False)
-
+    unidade_nome = serializers.CharField(source='unidade.nome', read_only=True)
     class Meta:
         model = Gestor
-        fields = [
-            'id', 'user', 'nome', 'cpf', 'telefone', 'endereco', 'unidade',
-            'pode_cadastrar', 'pode_editar', 'pode_dar_baixa',
-            'pode_cadastrar_unidade', 'pode_cadastrar_categoria',
-            'pode_cadastrar_sala', 'pode_cadastrar_gestor',
-            'criado_em', 'password'
-        ]
+        fields = '__all__'
         extra_kwargs = {'user': {'read_only': True}}
-
+    
     def create(self, validated_data):
         password = validated_data.pop('password', None)
-        validated_data.pop('user', None)
+        user = User.objects.create_user(username=validated_data['cpf'], password=password if password else 'mudar123', is_staff=True)
+        return Gestor.objects.create(user=user, **validated_data)
 
-        user = User.objects.create_user(
-            username=validated_data['cpf'],
-            password=password if password else 'mudar123',
-            is_staff=True
-        )
+class ItemVendaSerializer(serializers.ModelSerializer):
+    produto_nome = serializers.CharField(source='produto.nome', read_only=True)
+    class Meta:
+        model = ItemVenda
+        fields = ['id', 'produto', 'produto_nome', 'quantidade', 'preco_unitario']
+
+class VendaSerializer(serializers.ModelSerializer):
+    itens = ItemVendaSerializer(many=True)
+
+    class Meta:
+        model = Venda
+        fields = ['id', 'data_venda', 'valor_total', 'forma_pagamento', 'itens']
+
+    def create(self, validated_data):
+        itens_data = validated_data.pop('itens')
+        venda = Venda.objects.create(**validated_data)
+        valor_total_calculado = 0
         
-        gestor = Gestor.objects.create(user=user, **validated_data)
-        return gestor
+        for item_dado in itens_data:
+            produto = item_dado['produto']
+            quantidade_vendida = item_dado['quantidade']
+            
+            if produto.quantidade < quantidade_vendida:
+                 venda.delete()
+                 raise serializers.ValidationError({"erro": f"Estoque insuficiente para '{produto.nome}'."})
+            
+            produto.quantidade -= quantidade_vendida
+            produto.save()
+            ItemVenda.objects.create(venda=venda, **item_dado)
+            valor_total_calculado += (item_dado['preco_unitario'] * quantidade_vendida)
 
-    def update(self, instance, validated_data):
-        password = validated_data.pop('password', None)
-        if password:
-            instance.user.set_password(password)
-            instance.user.save()
+        venda.valor_total = valor_total_calculado
+        venda.save()
+        return venda
 
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-        return instance
+# --- SERIALIZER DA DESPESA (FINANCEIRO) ---
+class DespesaSerializer(serializers.ModelSerializer):
+    fornecedor_nome = serializers.ReadOnlyField(source='fornecedor.nome')
+
+    class Meta:
+        model = Despesa
+        fields = '__all__'
