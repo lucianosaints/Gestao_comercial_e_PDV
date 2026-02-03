@@ -20,7 +20,6 @@ class CategoriaSerializer(serializers.ModelSerializer):
         model = Categoria
         fields = '__all__'
 
-# --- AQUI ESTÁ A ALTERAÇÃO ---
 class SalaSerializer(serializers.ModelSerializer):
     unidade_nome = serializers.CharField(source='unidade.nome', read_only=True)
     # Conta quantos 'bens' existem vinculados a esta sala
@@ -53,16 +52,20 @@ class BemSerializer(serializers.ModelSerializer):
         model = Bem
         fields = '__all__'
 
+# --- GESTOR ATUALIZADO COM O CAMPO CARGO ---
 class GestorSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False)
     unidade_nome = serializers.CharField(source='unidade.nome', read_only=True)
+    
     class Meta:
         model = Gestor
-        fields = '__all__'
+        # Listamos explicitamente para garantir que 'cargo' seja enviado
+        fields = ['id', 'user', 'nome', 'cpf', 'telefone', 'unidade', 'unidade_nome', 'cargo', 'password']
         extra_kwargs = {'user': {'read_only': True}}
     
     def create(self, validated_data):
         password = validated_data.pop('password', None)
+        # O campo 'cargo' já vem dentro de validated_data e o Django salva sozinho
         user = User.objects.create_user(username=validated_data['cpf'], password=password if password else 'mudar123', is_staff=True)
         return Gestor.objects.create(user=user, **validated_data)
 

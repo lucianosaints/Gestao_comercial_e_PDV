@@ -14,14 +14,32 @@ function Login() {
     setError('');
 
     try {
+      // 1. FAZ O LOGIN E PEGA O TOKEN
       const response = await axios.post('http://127.0.0.1:8000/api/token/', {
-        username: username,
+        username: username, // O backend espera 'username', que no seu caso é o CPF
         password: password
       });
 
-      localStorage.setItem('access_token', response.data.access);
+      const token = response.data.access;
+      localStorage.setItem('access_token', token);
       localStorage.setItem('refresh_token', response.data.refresh);
+
+      // 2. (IMPORTANTE) BUSCA O CARGO DO USUÁRIO PARA O MENU FUNCIONAR
+      try {
+        const userResponse = await axios.get('http://127.0.0.1:8000/api/usuario-atual/', {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        // Salva o cargo e o nome para a Sidebar usar
+        localStorage.setItem('user_role', userResponse.data.cargo);
+        localStorage.setItem('user_name', userResponse.data.nome);
+
+      } catch (err) {
+        console.warn("Não foi possível buscar detalhes do cargo. Assumindo Gerente.");
+        localStorage.setItem('user_role', 'gerente');
+      }
       
+      // 3. Redireciona
       navigate('/dashboard');
       
     } catch (err) {
@@ -35,46 +53,46 @@ function Login() {
   };
 
   return (
-    <div className="login-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', padding: '0 20px' }}>
-      <div className="login-box" style={{ padding: '25px', width: '100%', maxWidth: '380px', background: 'white', borderRadius: '8px', boxShadow: '0 4px 10px rgba(0,0,0,0.1)' }}>
+    <div className="login-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', padding: '0 20px', backgroundColor: '#f0f2f5' }}>
+      <div className="login-box" style={{ padding: '30px', width: '100%', maxWidth: '380px', background: 'white', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}>
         
-        {/* 1. LOGO AUMENTADA AQUI 👇 */}
+        {/* LOGO */}
         <div style={{ textAlign: 'center' }}>
             <img 
                 src="/brasao-marica.png" 
                 alt="Logo do Sistema" 
                 className="login-logo" 
-                style={{ height: '150px', width: 'auto', marginBottom: '15px' }} // Aumentei para 150px e a margem
+                style={{ height: '120px', width: 'auto', marginBottom: '10px' }} 
             />
         </div>
         
-        <h1 style={{ marginTop: '5px', fontSize: '22px', textAlign: 'center', color: '#333' }}>Sistema de Vendas</h1>
-        <h2 style={{ fontSize: '14px', fontWeight: 'normal', color: '#666', marginBottom: '15px', textAlign: 'center' }}>
+        <h1 style={{ marginTop: '5px', fontSize: '22px', textAlign: 'center', color: '#1e293b', fontWeight: 'bold' }}>Sistema de Vendas</h1>
+        <h2 style={{ fontSize: '14px', fontWeight: 'normal', color: '#64748b', marginBottom: '25px', textAlign: 'center' }}>
             Controle de Estoque & PDV
         </h2>
         
-        {error && <div className="error-message" style={{ marginBottom: '15px', color: 'red', textAlign: 'center', fontSize: '14px' }}>{error}</div>}
+        {error && <div className="error-message" style={{ marginBottom: '15px', color: '#dc2626', background: '#fee2e2', padding: '10px', borderRadius: '6px', textAlign: 'center', fontSize: '14px' }}>{error}</div>}
         
         <form onSubmit={handleLogin}>
-          <div className="form-group" style={{ marginBottom: '10px' }}>
-            <label style={{ display: 'block', fontSize: '14px', marginBottom: '4px', fontWeight: 'bold', color: '#444' }}>Usuário</label>
+          <div className="form-group" style={{ marginBottom: '15px' }}>
+            <label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: '600', color: '#334155' }}>CPF (Usuário)</label>
             <input 
               type="text" 
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="Digite seu usuário"
-              style={{ width: '100%', padding: '10px', borderRadius: '5px', border: '1px solid #ccc', boxSizing: 'border-box' }}
+              placeholder="Digite seu CPF"
+              style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1', boxSizing: 'border-box', outline: 'none' }}
             />
           </div>
           
-          <div className="form-group" style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', fontSize: '14px', marginBottom: '4px', fontWeight: 'bold', color: '#444' }}>Senha</label>
+          <div className="form-group" style={{ marginBottom: '20px' }}>
+            <label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: '600', color: '#334155' }}>Senha</label>
             <input 
               type="password" 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Digite sua senha"
-              style={{ width: '100%', padding: '10px', borderRadius: '5px', border: '1px solid #ccc', boxSizing: 'border-box' }}
+              style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1', boxSizing: 'border-box', outline: 'none' }}
             />
           </div>
           
@@ -87,15 +105,16 @@ function Login() {
                 padding: '12px',         
                 boxSizing: 'border-box', 
                 fontSize: '16px',
-                background: '#007bff',
+                background: '#2563eb', // Azul mais moderno
                 color: 'white',
                 border: 'none',
-                borderRadius: '5px',
+                borderRadius: '8px',
                 cursor: 'pointer',
-                fontWeight: 'bold'
+                fontWeight: 'bold',
+                transition: 'background 0.2s'
             }}
           >
-            Entrar
+            Entrar no Sistema
           </button>
         </form>
       </div>

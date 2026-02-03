@@ -13,13 +13,23 @@ class Categoria(models.Model):
     descricao = models.TextField(blank=True, null=True)
     def __str__(self): return self.nome
 
-# 3. GESTOR
+# 3. GESTOR (ATUALIZADO COM CARGOS)
 class Gestor(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     nome = models.CharField(max_length=100)
     cpf = models.CharField(max_length=14, unique=True)
     telefone = models.CharField(max_length=20, blank=True, null=True)
     unidade = models.ForeignKey(Unidade, on_delete=models.SET_NULL, null=True, blank=True)
+
+    # --- CAMPO DE CARGOS ADICIONADO ---
+    CARGOS_OPCOES = [
+        ('gerente', 'Gerente Geral'),
+        ('vendedor', 'Vendedor'),
+        ('estoque', 'Estoquista'),
+    ]
+    cargo = models.CharField(max_length=20, choices=CARGOS_OPCOES, default='vendedor')
+    # ----------------------------------
+
     def __str__(self): return self.nome
 
 # 4. SALA
@@ -103,12 +113,8 @@ class Despesa(models.Model):
         ('ATRASADO', 'Atrasado'),
     ]
 
-    descricao = models.CharField(max_length=200) # Ex: "Conta de Luz Janeiro"
-    
-    # --- NOVO CAMPO ADICIONADO AQUI ---
+    descricao = models.CharField(max_length=200)
     numero_documento = models.CharField(max_length=50, blank=True, null=True)
-    # ----------------------------------
-
     valor = models.DecimalField(max_digits=10, decimal_places=2)
     data_vencimento = models.DateField()
     data_pagamento = models.DateField(blank=True, null=True)
@@ -116,7 +122,6 @@ class Despesa(models.Model):
     tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default='FIXA')
     situacao = models.CharField(max_length=20, choices=SITUACAO_CHOICES, default='PENDENTE')
     
-    # Opcional: Ligar a despesa a um fornecedor específico
     fornecedor = models.ForeignKey(Fornecedor, on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):

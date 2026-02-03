@@ -2,9 +2,15 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import action
+
+# --- NOVOS IMPORTS PARA A FUNÇÃO DE USUÁRIO ---
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+# ----------------------------------------------
+
 from django.db.models import Sum
 
-# --- 1. IMPORTS DOS MODELS (Tudo junto para não dar erro) ---
+# --- 1. IMPORTS DOS MODELS ---
 from .models import (
     Unidade, Categoria, Bem, Gestor, Sala, 
     Historico, Venda, ItemVenda, Fornecedor, Despesa
@@ -171,8 +177,7 @@ class DashboardResumoView(APIView):
             "total_unidades": Unidade.objects.count(),
             "total_categorias": Categoria.objects.count(),
             "total_salas": Sala.objects.count(),
-            # Se quiser adicionar gestores, descomente abaixo:
-            # "total_gestores": Gestor.objects.count(),
+            "total_gestores": Gestor.objects.count(),
         }
         return Response(data)
 
@@ -199,3 +204,28 @@ class GraficoVendasView(APIView):
             resultado = [{'name': 'Sem Vendas', 'vendas': 0}]
             
         return Response(resultado)
+
+# =================================================
+# NOVA VIEW: IDENTIFICAÇÃO DO USUÁRIO LOGADO
+# =================================================
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def usuario_atual(request):
+    try:
+        # Busca o Gestor ligado ao usuário que está logado
+        gestor = Gestor.objects.get(user=request.user)
+        return Response({
+            "id": gestor.id,
+            "nome": gestor.nome,
+            "cargo": gestor.cargo,
+            "unidade": gestor.unidade.nome if gestor.unidade else "Matriz"
+        })
+    except Gestor.DoesNotExist:
+        # Caso o superuser (admin) logue e não tenha perfil de gestor
+        return Response({
+            "id": request.user.id,
+            "nome": request.user.username,
+            "cargo": "gerente", # Admin é gerente por padrão
+            "unidade": "Sistema"
+        })

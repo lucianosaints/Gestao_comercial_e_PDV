@@ -22,7 +22,8 @@ from core.views import (
     FornecedorViewSet,
     DespesaViewSet,
     DashboardResumoView, 
-    GraficoVendasView 
+    GraficoVendasView,
+    usuario_atual  # <--- ADICIONEI ESTE IMPORT AQUI
 )
 
 router = DefaultRouter()
@@ -39,12 +40,19 @@ router.register(r'despesas', DespesaViewSet)
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
+    
+    # Rotas de Autenticação (Token)
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    
+    # Rotas de Dashboard
     path('api/dashboard-resumo/', DashboardResumoView.as_view(), name='dashboard-resumo'),
     path('api/grafico-vendas/', GraficoVendasView.as_view(), name='grafico-vendas'),
+    
+    # --- ROTA DE CONTROLE DE ACESSO (CARGOS) ---
+    path('api/usuario-atual/', usuario_atual, name='usuario-atual'), # <--- ADICIONEI ESTA LINHA
 ]
 
-# --- ADICIONE ISTO NO FINAL PARA LIBERAR AS FOTOS ---
+# --- LIBERA AS FOTOS EM MODO DEBUG ---
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

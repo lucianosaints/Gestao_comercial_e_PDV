@@ -25,11 +25,11 @@ import EditCategoria from './EditCategoria';
 
 // --- LOCAIS DE ESTOQUE (Salas) ---
 import Salas from './Salas';
-// import AddSala from './AddSala';  <-- NÃO PRECISA MAIS DESSE IMPORT
 import EditSala from './EditSala';
 
 // --- GESTÃO E RELATÓRIOS ---
-import Gestores from './paginas/TelaGestores';
+// AQUI ESTAVA O ERRO! Mudamos para pegar o arquivo da raiz (./Gestores)
+import Gestores from './Gestores'; 
 import AddGestor from './AddGestor';
 import RelatorioVendas from './paginas/TelaRelatorio';
 import GerenciarFornecedores from './paginas/GerenciarFornecedores';
@@ -69,7 +69,6 @@ function App() {
         {/* --- LOCAIS DE ESTOQUE (SALAS) --- */}
         <Route path="/salas" element={<PrivateRoute><Salas /></PrivateRoute>} />
         
-        {/* AQUI ESTAVA O ERRO: AGORA APONTA PARA EditSala */}
         <Route path="/add-sala" element={<PrivateRoute><EditSala /></PrivateRoute>} />
         
         <Route path="/salas/:id" element={<PrivateRoute><EditSala /></PrivateRoute>} />

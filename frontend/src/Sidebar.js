@@ -6,24 +6,30 @@ import {
   FaTruck, FaCalculator 
 } from 'react-icons/fa';
 
-// NÃO PRECISA MAIS IMPORTAR O CSS AQUI
-// As cores estão definidas abaixo
-
 function Sidebar({ isCollapsed, toggleCollapse }) {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // --- LÓGICA DE CARGOS (A Novidade) ---
+  const cargo = localStorage.getItem('user_role') || 'vendedor'; 
+  const isGerente = cargo === 'gerente';
+  const isVendedor = cargo === 'vendedor' || cargo === 'gerente';
+  const isEstoque = cargo === 'estoque' || cargo === 'gerente';
+  // -------------------------------------
+
   const handleLogout = () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user_role'); // Limpa cargo
+    localStorage.removeItem('user_name'); // Limpa nome
     navigate('/login');
   };
 
-  // --- ESTILOS DIRETOS (GARANTIA QUE VAI FUNCIONAR) ---
+  // --- SEUS ESTILOS ORIGINAIS ---
   const styles = {
     container: {
       width: isCollapsed ? '80px' : '260px',
-      backgroundColor: '#0f172a', // AZUL ESCURO (PRETO)
+      backgroundColor: '#0f172a',
       color: 'white',
       display: 'flex',
       flexDirection: 'column',
@@ -44,7 +50,7 @@ function Sidebar({ isCollapsed, toggleCollapse }) {
       borderBottom: '1px solid rgba(255,255,255,0.1)'
     },
     menuList: {
-      listStyle: 'none', // Tira as bolinhas
+      listStyle: 'none',
       padding: 0,
       margin: 0,
       flex: 1,
@@ -93,21 +99,41 @@ function Sidebar({ isCollapsed, toggleCollapse }) {
     }
   };
 
+  // --- LISTA DE MENUS FILTRADA POR CARGO ---
   const menuItems = [
+    // Todo mundo vê o Painel
     { title: 'Painel Principal', icon: <FaHome size={20}/>, path: '/dashboard' },
-    { title: 'Frente de Caixa (PDV)', icon: <FaCashRegister size={20}/>, path: '/vendas' },
-    { title: 'Financeiro (Saídas)', icon: <FaCalculator size={20}/>, path: '/financeiro' },
-    { title: 'Relatório Vendas', icon: <FaChartLine size={20}/>, path: '/relatorio-vendas' },
+
+    // Vendedor e Gerente vêem vendas
+    ...(isVendedor ? [
+        { title: 'Frente de Caixa (PDV)', icon: <FaCashRegister size={20}/>, path: '/vendas' },
+        { title: 'Relatório Vendas', icon: <FaChartLine size={20}/>, path: '/relatorio-vendas' },
+    ] : []),
+
+    // SÓ GERENTE vê Financeiro
+    ...(isGerente ? [
+        { title: 'Financeiro (Saídas)', icon: <FaCalculator size={20}/>, path: '/financeiro' },
+    ] : []),
     
+    // Seções de Gestão
     { section: 'GESTÃO' },
-    { title: 'Produtos', icon: <FaBox size={20}/>, path: '/bens' },
-    { title: 'Fornecedores', icon: <FaTruck size={20}/>, path: '/fornecedores' },
-    { title: 'Locais de Estoque', icon: <FaWarehouse size={20}/>, path: '/salas' },
     
-    { section: 'CONFIGURAÇÕES' },
-    { title: 'Lojas / Filiais', icon: <FaStore size={20}/>, path: '/unidades' },
-    { title: 'Departamentos', icon: <FaLayerGroup size={20}/>, path: '/categorias' },
-    { title: 'Gestores', icon: <FaUserTie size={20}/>, path: '/gestores' },
+    // Todos vêem Produtos
+    { title: 'Produtos', icon: <FaBox size={20}/>, path: '/bens' },
+
+    // Estoque e Gerente vêem Fornecedores e Locais
+    ...(isEstoque ? [
+        { title: 'Fornecedores', icon: <FaTruck size={20}/>, path: '/fornecedores' },
+        { title: 'Locais de Estoque', icon: <FaWarehouse size={20}/>, path: '/salas' },
+    ] : []),
+    
+    // SÓ GERENTE vê Configurações
+    ...(isGerente ? [
+        { section: 'CONFIGURAÇÕES' },
+        { title: 'Lojas / Filiais', icon: <FaStore size={20}/>, path: '/unidades' },
+        { title: 'Departamentos', icon: <FaLayerGroup size={20}/>, path: '/categorias' },
+        { title: 'Gestores', icon: <FaUserTie size={20}/>, path: '/gestores' },
+    ] : [])
   ];
 
   return (
