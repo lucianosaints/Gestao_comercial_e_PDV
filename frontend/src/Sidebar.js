@@ -142,6 +142,11 @@ function Sidebar({ isCollapsed, toggleCollapse }) {
       { title: 'Lojas / Filiais', icon: <FaStore size={20} />, path: '/unidades' },
       { title: 'Departamentos', icon: <FaLayerGroup size={20} />, path: '/categorias' },
       { title: 'Gestores', icon: <FaUserTie size={20} />, path: '/gestores' },
+    ] : []),
+
+    // Lista de Clientes (Visível para Vendedor e Gerente)
+    ...(isVendedor ? [
+      { title: 'Clientes', icon: <FaUserTie size={20} />, path: '/clientes' }
     ] : [])
   ];
 

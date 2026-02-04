@@ -14,7 +14,8 @@ from .views import (
     GraficoVendasView,
     RelatorioVendasView,     # <--- NOVO
     RelatorioInventarioView, # <--- NOVO
-    usuario_atual            # <--- NOVO
+    usuario_atual,           # <--- NOVO
+    ClienteViewSet           # <--- NOVO
 )
 
 router = DefaultRouter()
@@ -27,6 +28,7 @@ router.register(r'vendas', VendaViewSet)
 router.register(r'historico', HistoricoViewSet)
 router.register(r'fornecedores', FornecedorViewSet)
 router.register(r'despesas', DespesaViewSet)
+router.register(r'clientes', ClienteViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

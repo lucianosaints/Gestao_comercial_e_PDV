@@ -1,7 +1,12 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 # Importando todas as tabelas (incluindo a Despesa nova)
-from .models import Unidade, Categoria, Bem, Gestor, Sala, Historico, Venda, ItemVenda, Fornecedor, Despesa
+from .models import Unidade, Categoria, Bem, Gestor, Sala, Historico, Venda, ItemVenda, Fornecedor, Despesa, Cliente
+
+class ClienteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cliente
+        fields = '__all__'
 
 class DashboardResumoSerializer(serializers.Serializer):
     total_bens = serializers.IntegerField()
@@ -80,7 +85,7 @@ class VendaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Venda
-        fields = ['id', 'data_venda', 'valor_total', 'desconto', 'forma_pagamento', 'itens']
+        fields = ['id', 'data_venda', 'valor_total', 'desconto', 'forma_pagamento', 'cliente_solicitou_cupom', 'cpf_cnpj_cliente', 'telefone_cliente', 'itens']
 
     def create(self, validated_data):
         itens_data = validated_data.pop('itens')

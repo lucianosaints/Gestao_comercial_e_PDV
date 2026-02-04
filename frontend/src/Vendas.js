@@ -18,6 +18,11 @@ function Vendas() {
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [formaPagamento, setFormaPagamento] = useState('DINHEIRO');
 
+    // Estado Cupom Fiscal
+    const [solicitaCupom, setSolicitaCupom] = useState(false);
+    const [cpfCnpj, setCpfCnpj] = useState('');
+    const [telefone, setTelefone] = useState('');
+
     const [vendaFinalizada, setVendaFinalizada] = useState(null);
     const [mostrarTicket, setMostrarTicket] = useState(false);
 
@@ -113,6 +118,9 @@ function Vendas() {
                 valor_total: total,
                 desconto: parseFloat(desconto || 0),
                 forma_pagamento: formaPagamento,
+                cliente_solicitou_cupom: solicitaCupom,
+                cpf_cnpj_cliente: solicitaCupom ? cpfCnpj : null,
+                telefone_cliente: telefone,
                 itens: carrinho.map(item => ({
                     produto: item.id, quantidade: item.quantidade, preco_unitario: item.valor
                 }))
@@ -127,6 +135,8 @@ function Vendas() {
                 valor_total: total,
                 desconto: parseFloat(desconto || 0),
                 forma_pagamento: formaPagamento,
+                cliente_solicitou_cupom: solicitaCupom,
+                cpf_cnpj_cliente: solicitaCupom ? cpfCnpj : null,
                 itens: carrinho
             };
 
@@ -135,6 +145,9 @@ function Vendas() {
 
             setCarrinho([]);
             setDesconto(0);
+            setSolicitaCupom(false);
+            setCpfCnpj('');
+            setTelefone('');
             setIsCartOpen(false);
             carregarProdutos();
         } catch (error) {
@@ -282,7 +295,7 @@ function Vendas() {
                         <button onClick={toggleCart} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '20px', color: '#6b7280' }}><FaTimes /></button>
                     </div>
 
-                    <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
+                    <div style={{ flex: 1, overflowY: 'auto', padding: '20px', minHeight: '0' }}>
                         {carrinho.map(item => (
                             <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f3f4f6' }}>
                                 <div style={{ width: '50px', height: '50px', borderRadius: '6px', overflow: 'hidden', marginRight: '15px', border: '1px solid #eee' }}>
@@ -312,7 +325,7 @@ function Vendas() {
                         ))}
                     </div>
 
-                    <div style={{ padding: '20px', borderTop: '1px solid #eee', background: '#fff' }}>
+                    <div style={{ padding: '20px', borderTop: '1px solid #eee', background: '#fff', overflowY: 'auto', maxHeight: '50vh' }}>
                         <div style={{ marginBottom: '15px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                             <label style={{ fontWeight: 'bold', color: '#374151' }}>Desconto (R$):</label>
                             <input
@@ -343,6 +356,45 @@ function Vendas() {
                                 <span style={{ fontSize: '16px', fontWeight: '900' }}>M</span> Mumbuca
                             </button>
                         </div>
+
+                        {/* --- ÁREA DE CUPOM FISCAL --- */}
+                        <div style={{ marginBottom: '20px', padding: '15px', background: '#f0fdf4', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', fontWeight: 'bold', color: '#166534', gap: '10px' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={solicitaCupom}
+                                    onChange={(e) => setSolicitaCupom(e.target.checked)}
+                                    style={{ width: '18px', height: '18px', accentColor: '#15803d' }}
+                                />
+                                Solicitar Cupom Fiscal?
+                            </label>
+
+                            {solicitaCupom && (
+                                <div style={{ marginTop: '10px' }}>
+                                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#166534', marginBottom: '5px' }}>CPF / CNPJ na Nota:</label>
+                                    <input
+                                        type="text"
+                                        placeholder="000.000.000-00"
+                                        value={cpfCnpj}
+                                        onChange={(e) => setCpfCnpj(e.target.value)}
+                                        style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #16a34a', outline: 'none' }}
+                                    />
+                                </div>
+                            )}
+                        </div>
+
+                        {/* --- TELEFONE WHATSAPP (OPCIONAL) --- */}
+                        <div style={{ marginBottom: '20px' }}>
+                            <label style={{ fontWeight: 'bold', color: '#374151', display: 'block', marginBottom: '5px' }}>WhatsApp (Opcional):</label>
+                            <input
+                                type="text"
+                                placeholder="(00) 00000-0000"
+                                value={telefone}
+                                onChange={(e) => setTelefone(e.target.value)}
+                                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '16px' }}
+                            />
+                        </div>
+
 
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '20px', fontWeight: 'bold', marginBottom: '20px' }}>
                             <span>Total</span>

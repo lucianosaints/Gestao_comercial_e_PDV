@@ -57,6 +57,7 @@ function Dashboard() {
 
         try {
             const res = await axios.get('http://127.0.0.1:8000/api/dashboard-resumo/', config);
+            console.log("Resumo Data:", res.data);
             setResumo(res.data);
         } catch (e) { console.error("Erro resumo:", e); }
 

@@ -26,7 +26,8 @@ from core.views import (
     RelatorioVendasView,     # <--- NOVO
     RelatorioInventarioView, # <--- NOVO
     RelatorioDespesasView,   # <--- NOVO
-    usuario_atual            
+    usuario_atual,
+    ClienteViewSet
 )
 
 router = DefaultRouter()
@@ -39,6 +40,7 @@ router.register(r'vendas', VendaViewSet)
 router.register(r'historico', HistoricoViewSet)
 router.register(r'fornecedores', FornecedorViewSet)
 router.register(r'despesas', DespesaViewSet)
+router.register(r'clientes', ClienteViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),

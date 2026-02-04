@@ -83,6 +83,12 @@ class Venda(models.Model):
     valor_total = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     desconto = models.DecimalField(max_digits=10, decimal_places=2, default=0.00) # Novo campo
     forma_pagamento = models.CharField(max_length=50, default='DINHEIRO')
+    
+    # Campo de Cupom Fiscal
+    cliente_solicitou_cupom = models.BooleanField(default=False)
+    cpf_cnpj_cliente = models.CharField(max_length=20, blank=True, null=True)
+    telefone_cliente = models.CharField(max_length=20, blank=True, null=True)
+
     def __str__(self): return f"Venda #{self.id}"
 
 # 8. ITEM VENDA
@@ -135,3 +141,14 @@ class Despesa(models.Model):
 
     def __str__(self):
         return f"{self.descricao} - R$ {self.valor}"
+
+# 11. CLIENTE
+class Cliente(models.Model):
+    nome = models.CharField(max_length=100)
+    cpf_cnpj = models.CharField(max_length=20, unique=True)
+    telefone = models.CharField(max_length=20, blank=True, null=True)
+    email = models.EmailField(blank=True, null=True)
+    endereco = models.CharField(max_length=200, blank=True, null=True)
+    data_cadastro = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self): return self.nome

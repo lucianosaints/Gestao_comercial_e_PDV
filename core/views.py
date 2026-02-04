@@ -18,19 +18,27 @@ from django.db.models import Sum
 # --- 1. IMPORTS DOS MODELS ---
 from .models import (
     Unidade, Categoria, Bem, Gestor, Sala, 
-    Historico, Venda, ItemVenda, Fornecedor, Despesa
+    Historico, Venda, ItemVenda, Fornecedor, Despesa, Cliente
 )
 
 # --- 2. IMPORTS DOS SERIALIZERS ---
 from .serializers import (
     UnidadeSerializer, CategoriaSerializer, BemSerializer, 
     GestorSerializer, SalaSerializer, HistoricoSerializer, 
-    VendaSerializer, FornecedorSerializer, DespesaSerializer
+    VendaSerializer, FornecedorSerializer, DespesaSerializer, ClienteSerializer
 )
 
 # =================================================
 # VIEWSETS (CRUDs PADRÃO)
 # =================================================
+
+# 12. CLIENTE
+class ClienteViewSet(viewsets.ModelViewSet):
+    queryset = Cliente.objects.all().order_by('nome')
+    serializer_class = ClienteSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['nome', 'cpf_cnpj', 'telefone']
 
 # 1. FORNECEDOR
 class FornecedorViewSet(viewsets.ModelViewSet):
