@@ -1,17 +1,24 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { 
-  FaHome, FaCashRegister, FaChartLine, FaBox, FaWarehouse, 
-  FaStore, FaLayerGroup, FaUserTie, FaSignOutAlt, FaBars, 
-  FaTruck, FaCalculator 
+import {
+  FaHome, FaCashRegister, FaChartLine, FaBox, FaWarehouse,
+  FaStore, FaLayerGroup, FaUserTie, FaSignOutAlt, FaBars,
+  FaTruck, FaCalculator
 } from 'react-icons/fa';
 
 function Sidebar({ isCollapsed, toggleCollapse }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isMobile, setIsMobile] = React.useState(window.innerWidth < 1024);
+
+  React.useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // --- LÓGICA DE CARGOS (A Novidade) ---
-  const cargo = localStorage.getItem('user_role') || 'vendedor'; 
+  const cargo = localStorage.getItem('user_role') || 'vendedor';
   const isGerente = cargo === 'gerente';
   const isVendedor = cargo === 'vendedor' || cargo === 'gerente';
   const isEstoque = cargo === 'estoque' || cargo === 'gerente';
@@ -28,7 +35,7 @@ function Sidebar({ isCollapsed, toggleCollapse }) {
   // --- SEUS ESTILOS ORIGINAIS ---
   const styles = {
     container: {
-      width: isCollapsed ? '80px' : '260px',
+      width: isCollapsed ? (isMobile ? '0px' : '80px') : '260px',
       backgroundColor: '#0f172a',
       color: 'white',
       display: 'flex',
@@ -38,7 +45,9 @@ function Sidebar({ isCollapsed, toggleCollapse }) {
       transition: 'width 0.3s ease',
       zIndex: 1000,
       left: 0,
-      top: 0
+      top: 0,
+      overflowX: 'hidden', // Importante para não mostrar scroll quando fechar
+      boxShadow: isMobile && !isCollapsed ? '5px 0 15px rgba(0,0,0,0.3)' : 'none'
     },
     header: {
       height: '60px',
@@ -102,50 +111,50 @@ function Sidebar({ isCollapsed, toggleCollapse }) {
   // --- LISTA DE MENUS FILTRADA POR CARGO ---
   const menuItems = [
     // Todo mundo vê o Painel
-    { title: 'Painel Principal', icon: <FaHome size={20}/>, path: '/dashboard' },
+    { title: 'Painel Principal', icon: <FaHome size={20} />, path: '/dashboard' },
 
     // Vendedor e Gerente vêem vendas
     ...(isVendedor ? [
-        { title: 'Frente de Caixa (PDV)', icon: <FaCashRegister size={20}/>, path: '/vendas' },
-        { title: 'Relatório Vendas', icon: <FaChartLine size={20}/>, path: '/relatorio-vendas' },
+      { title: 'Frente de Caixa (PDV)', icon: <FaCashRegister size={20} />, path: '/vendas' },
+      { title: 'Relatório Vendas', icon: <FaChartLine size={20} />, path: '/relatorio-vendas' },
     ] : []),
 
     // SÓ GERENTE vê Financeiro
     ...(isGerente ? [
-        { title: 'Financeiro (Saídas)', icon: <FaCalculator size={20}/>, path: '/financeiro' },
+      { title: 'Financeiro (Saídas)', icon: <FaCalculator size={20} />, path: '/financeiro' },
     ] : []),
-    
+
     // Seções de Gestão
     { section: 'GESTÃO' },
-    
+
     // Todos vêem Produtos
-    { title: 'Produtos', icon: <FaBox size={20}/>, path: '/bens' },
+    { title: 'Produtos', icon: <FaBox size={20} />, path: '/bens' },
 
     // Estoque e Gerente vêem Fornecedores e Locais
     ...(isEstoque ? [
-        { title: 'Fornecedores', icon: <FaTruck size={20}/>, path: '/fornecedores' },
-        { title: 'Locais de Estoque', icon: <FaWarehouse size={20}/>, path: '/salas' },
+      { title: 'Fornecedores', icon: <FaTruck size={20} />, path: '/fornecedores' },
+      { title: 'Locais de Estoque', icon: <FaWarehouse size={20} />, path: '/salas' },
     ] : []),
-    
+
     // SÓ GERENTE vê Configurações
     ...(isGerente ? [
-        { section: 'CONFIGURAÇÕES' },
-        { title: 'Lojas / Filiais', icon: <FaStore size={20}/>, path: '/unidades' },
-        { title: 'Departamentos', icon: <FaLayerGroup size={20}/>, path: '/categorias' },
-        { title: 'Gestores', icon: <FaUserTie size={20}/>, path: '/gestores' },
+      { section: 'CONFIGURAÇÕES' },
+      { title: 'Lojas / Filiais', icon: <FaStore size={20} />, path: '/unidades' },
+      { title: 'Departamentos', icon: <FaLayerGroup size={20} />, path: '/categorias' },
+      { title: 'Gestores', icon: <FaUserTie size={20} />, path: '/gestores' },
     ] : [])
   ];
 
   return (
     <div style={styles.container}>
-      
+
       <div style={styles.header}>
         {!isCollapsed && (
-          <span style={{fontSize:'20px', fontWeight:'bold'}}>
-            Sakura<span style={{color: '#10b981'}}>System</span>
+          <span style={{ fontSize: '20px', fontWeight: 'bold' }}>
+            Sakura<span style={{ color: '#10b981' }}>System</span>
           </span>
         )}
-        <button onClick={toggleCollapse} style={{background:'none', border:'none', color:'white', cursor:'pointer', fontSize:'20px'}}>
+        <button onClick={toggleCollapse} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: '20px' }}>
           <FaBars />
         </button>
       </div>
@@ -155,16 +164,16 @@ function Sidebar({ isCollapsed, toggleCollapse }) {
           if (item.section) {
             return <li key={index} style={styles.menuSection}>{item.section}</li>;
           }
-          
+
           const isActive = location.pathname === item.path;
-          
+
           return (
-            <li 
-              key={index} 
-              onClick={() => navigate(item.path)} 
+            <li
+              key={index}
+              onClick={() => navigate(item.path)}
               style={styles.item(isActive)}
             >
-              <span style={{display:'flex', alignItems:'center'}}>{item.icon}</span>
+              <span style={{ display: 'flex', alignItems: 'center' }}>{item.icon}</span>
               <span style={styles.text}>{item.title}</span>
             </li>
           );
@@ -174,7 +183,7 @@ function Sidebar({ isCollapsed, toggleCollapse }) {
       <div style={styles.footer}>
         <button onClick={handleLogout} style={styles.logoutBtn}>
           <FaSignOutAlt />
-          {!isCollapsed && <span style={{marginLeft:'10px'}}>Sair do Sistema</span>}
+          {!isCollapsed && <span style={{ marginLeft: '10px' }}>Sair do Sistema</span>}
         </button>
       </div>
 

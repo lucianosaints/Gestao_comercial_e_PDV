@@ -1,7 +1,7 @@
 # PATRI-TECH 🏢
-**Sistema de Gestão de Patrimônio e Ativos**
+**Sistema de Gestão de Patrimônio e Vendas (PDV)**
 
-O **PATRI-TECH** é uma aplicação Full-Stack desenvolvida para o controle eficiente de bens patrimoniais, unidades, categorias e gestão de usuários com permissões específicas.
+O **PATRI-TECH** é uma aplicação Full-Stack desenvolvida para o controle eficiente de bens patrimoniais, unidades, categorias, gestão de usuários e ponto de venda (PDV).
 
 ---
 
@@ -10,38 +10,45 @@ O **PATRI-TECH** é uma aplicação Full-Stack desenvolvida para o controle efic
 Este projeto foi construído utilizando uma arquitetura moderna separada em **Backend (API)** e **Frontend (Interface)**.
 
 ### 🐍 Backend (Servidor & API)
-O núcleo do sistema, responsável pela lógica de negócios, banco de dados e segurança.
-
 * **Linguagem:** Python 3.12+
 * **Framework Principal:** Django 5.x
 * **API:** Django REST Framework (DRF)
 * **Banco de Dados:** SQLite (Desenvolvimento)
-* **Autenticação:** JWT (JSON Web Tokens) via `djangorestframework-simplejwt`
-* **Segurança de API:** `django-cors-headers` (Controle de acesso CORS)
-* **Interface Administrativa:** Customizada
-* **Documentação da API:** `drf-spectacular` (Swagger/OpenAPI)
+* **Autenticação:** JWT (JSON Web Tokens)
+* **Relatórios:** ReportLab (PDF) e OpenPyXL (Excel)
 
 ### ⚛️ Frontend (Interface do Usuário)
-A interface visual onde o usuário interage com o sistema.
-
 * **Biblioteca Principal:** React.js
-* **Gerenciador de Pacotes:** NPM
-* **Comunicação HTTP:** Axios (Para consumir a API do Django)
+* **Comunicação HTTP:** Axios
 * **Roteamento:** React Router Dom
-* **Ícones:** FontAwesome
-* **Estilização:** CSS3 Customizado
+* **Ícones:** React Icons (FontAwesome)
 
 ---
 
 ## ⚙️ Funcionalidades Principais
 
-* **Dashboard Interativo:** Visualização rápida do total de bens, unidades, categorias e valor total do patrimônio.
-* **Gestão de Unidades:** Cadastro e controle de locais (escolas, prédios, departamentos).
-* **Gestão de Bens:** Controle completo de ativos com valores e categorias.
-* **Controle de Acesso (Gestores):**
-    * Sistema de permissões granulares (checkboxes).
-    * Permissões configuráveis: *Pode Cadastrar*, *Pode Editar*, *Pode Dar Baixa*.
-* **Segurança:** Proteção contra cadastro duplicado (CPF Único) e rotas protegidas por Token.
+* **Dashboard Interativo:** 
+    * Cards coloridos com métricas em tempo real.
+    * **[NOVO] Alerta de Estoque:** Monitoramento visual de produtos com estoque baixo (padrão < 2).
+    * Gráficos de vendas e performance.
+
+* **Ponto de Venda (PDV):**
+    * Adição de produtos ao carrinho com verificação de estoque.
+    * **[NOVO] Desconto Manual:** Aplicação de desconto em valor (R$) antes de finalizar.
+    * Múltiplas formas de pagamento (Dinheiro, Pix, Crédito, Débito, Mumbuca).
+    * Geração automática de ticket de venda na tela.
+
+* **Gestão de Bens (Produtos):** 
+    * Controle completo de ativos com imagens, valores e categorias.
+    * Histórico de alterações por produto.
+    * **[NOVO] Exportação para Excel:** Download do inventário completo em planilha.
+
+* **Relatórios Gerenciais:**
+    * **[NOVO] Relatório de Vendas (PDF):** Documento detalhado com todas as transações, filtrável por data.
+
+* **Controle de Acesso:**
+    * Sistema de login seguro.
+    * Perfis de usuário (Gerente, Vendedor, Estoquista).
 
 ---
 
@@ -52,24 +59,40 @@ Para rodar o sistema, é necessário iniciar o servidor Backend e o servidor Fro
 ### 1. Rodando o Backend (Django)
 ```bash
 # Entre na pasta raiz e ative o ambiente virtual
-source venv/bin/activate  # Linux/Mac
+source .venv/Scripts/activate  # Windows (Git Bash)
 # ou
-venv\Scripts\activate     # Windows
+.venv\Scripts\activate     # Windows (CMD/PowerShell)
 
-# Instale as dependências (se necessário)
+# Instale as dependências (incluindo as novas)
 pip install -r requirements.txt
 
-# Execute as migrações do banco
+# Execute as migrações do banco (caso existam atualizações)
 python manage.py migrate
 
 # Inicie o servidor
 python manage.py runserver
+```
+O Backend rodará em: `http://127.0.0.1:8000/`
 
+### 2. Rodando o Frontend (React)
+```bash
 # Entre na pasta do frontend
 cd frontend
 
-# Instale as dependências (primeira vez)
+# Instale as dependências
 npm install
 
 # Inicie o servidor de desenvolvimento
-npm start.
+npm start
+```
+O Frontend abrirá automaticamente em: `http://localhost:3000/`
+
+---
+
+## 📦 Dependências Adicionadas Recentemente
+- `reportlab`: Geração de PDFs.
+- `openpyxl`: Geração de planilhas Excel.
+
+---
+
+**Desenvolvido por Luciano Saints**

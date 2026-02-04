@@ -2,12 +2,17 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import action
+# --- NOVOS IMPORTS PARA PAGINAÇÃO ---
+from rest_framework.pagination import PageNumberPagination
+from rest_framework import filters
+# ------------------------------------
 
 # --- NOVOS IMPORTS PARA A FUNÇÃO DE USUÁRIO ---
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 # ----------------------------------------------
 
+from django.db import models
 from django.db.models import Sum
 
 # --- 1. IMPORTS DOS MODELS ---
@@ -48,11 +53,15 @@ class VendaViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         itens_data = request.data.get('itens', [])
-        valor_total = request.data.get('valor_total')
+        valor_total = request.data.get('valor_total') # Este valor já deve vir com desconto do frontend, ou recalculamos?
+        # O ideal é o backend validar. Vamos confiar no total enviado ou recalcular?
+        # O código original confiava no 'valor_total' enviado. Vou manter assim mas salvar o desconto.
+        desconto = request.data.get('desconto', 0.00)
         forma_pagamento = request.data.get('forma_pagamento', 'DINHEIRO')
 
         nova_venda = Venda.objects.create(
             valor_total=valor_total,
+            desconto=desconto,
             forma_pagamento=forma_pagamento
         )
 
@@ -101,10 +110,21 @@ class CategoriaViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
 # 5. BEM (PRODUTOS)
+# 5. BEM (PRODUTOS)
+class StandardResultsSetPagination(PageNumberPagination):
+    page_size = 50
+    page_size_query_param = 'page_size'
+    max_page_size = 1000
+
 class BemViewSet(viewsets.ModelViewSet):
-    queryset = Bem.objects.all()
+    queryset = Bem.objects.all().order_by('nome') # Ordenação importante para paginação
     serializer_class = BemSerializer
     permission_classes = [permissions.IsAuthenticated]
+    
+    # Configuração de Paginação e Busca
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['nome', 'tombo', 'descricao', 'codigo_barras']
 
     def get_queryset(self):
         queryset = Bem.objects.all()
@@ -115,6 +135,12 @@ class BemViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(sala_id=sala_id)
         if unidade_id:
             queryset = queryset.filter(unidade_id=unidade_id)
+            
+        # Filtro de Alerta de Estoque
+        alerta = self.request.query_params.get('alerta')
+        if alerta == 'true':
+            queryset = queryset.filter(quantidade__lte=models.F('estoque_minimo'))
+            
         return queryset
 
     def perform_update(self, serializer):
@@ -125,6 +151,13 @@ class BemViewSet(viewsets.ModelViewSet):
             descricao="Produto atualizado."
         )
 
+    # --- ACTION PARA PDV (SEM PAGINAÇÃO) ---
+    @action(detail=False, methods=['get'])
+    def listar_todos(self, request):
+        # Desativa paginação temporariamente para este request
+        paginator = self.pagination_class = None 
+        return self.list(request)
+        
     @action(detail=True, methods=['get'])
     def historico(self, request, pk=None):
         bem = self.get_object()
@@ -167,21 +200,33 @@ class DespesaViewSet(viewsets.ModelViewSet):
 # VIEWS ESPECIAIS (DASHBOARD)
 # =================================================
 
-# 10. RESUMO DOS CARDS
+# --- IMPORTS PARA RELATÓRIOS ---
+from django.http import HttpResponse
+from django.http import HttpResponse
+from .utils_relatorios import gerar_pdf_vendas, gerar_excel_inventario, gerar_excel_despesas
+
+# ... (Mantenha os imports existentes, mas vou reescrever a DashboardResumoView e adicionar as novas Views no final)
+
+# 10. RESUMO DOS CARDS (ATUALIZADO COM ALERTA)
 class DashboardResumoView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
+        # Lógica de alerta
+        estoque_baixo = Bem.objects.filter(quantidade__lte=models.F('estoque_minimo')).count()
+
         data = {
             "total_bens": Bem.objects.count(),
             "total_unidades": Unidade.objects.count(),
             "total_categorias": Categoria.objects.count(),
             "total_salas": Sala.objects.count(),
             "total_gestores": Gestor.objects.count(),
+            "alertas_estoque": estoque_baixo # Novo campo
         }
         return Response(data)
 
-# 11. GRÁFICO DE VENDAS
+# ... (GraficoVendasView se mantem igual)
+
 class GraficoVendasView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -206,14 +251,39 @@ class GraficoVendasView(APIView):
         return Response(resultado)
 
 # =================================================
-# NOVA VIEW: IDENTIFICAÇÃO DO USUÁRIO LOGADO
+# VIEWS DE RELATÓRIOS
+# =================================================
+
+class RelatorioVendasView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        vendas = Venda.objects.all().order_by('-data_venda')
+        pdf_buffer = gerar_pdf_vendas(vendas)
+        
+        response = HttpResponse(pdf_buffer, content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename="relatorio_vendas.pdf"'
+        return response
+
+class RelatorioInventarioView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        bens = Bem.objects.all()
+        excel_buffer = gerar_excel_inventario(bens)
+        
+        response = HttpResponse(excel_buffer, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename="inventario.xlsx"'
+        return response
+
+# =================================================
+# IDENTIFICAÇÃO DO USUÁRIO
 # =================================================
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def usuario_atual(request):
     try:
-        # Busca o Gestor ligado ao usuário que está logado
         gestor = Gestor.objects.get(user=request.user)
         return Response({
             "id": gestor.id,
@@ -222,10 +292,26 @@ def usuario_atual(request):
             "unidade": gestor.unidade.nome if gestor.unidade else "Matriz"
         })
     except Gestor.DoesNotExist:
-        # Caso o superuser (admin) logue e não tenha perfil de gestor
         return Response({
             "id": request.user.id,
             "nome": request.user.username,
-            "cargo": "gerente", # Admin é gerente por padrão
+            "cargo": "gerente",
             "unidade": "Sistema"
         })
+
+class RelatorioDespesasView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        despesas = Despesa.objects.all().order_by('-data_vencimento')
+        
+        # Filtro de Mês (yyyy-mm)
+        mes_filtro = request.query_params.get('mes')
+        if mes_filtro:
+            despesas = despesas.filter(data_vencimento__startswith=mes_filtro)
+            
+        excel_buffer = gerar_excel_despesas(despesas)
+        
+        response = HttpResponse(excel_buffer, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename="relatorio_financeiro.xlsx"'
+        return response

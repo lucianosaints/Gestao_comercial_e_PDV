@@ -63,6 +63,7 @@ class Bem(models.Model):
     # Dados
     valor = models.DecimalField(max_digits=10, decimal_places=2)
     quantidade = models.IntegerField(default=1)
+    estoque_minimo = models.IntegerField(default=2)  # Novo campo para alerta
     codigo_barras = models.CharField(max_length=50, blank=True, null=True, unique=True)
     data_aquisicao = models.DateField(auto_now_add=True)
 
@@ -80,6 +81,7 @@ class Bem(models.Model):
 class Venda(models.Model):
     data_venda = models.DateTimeField(auto_now_add=True)
     valor_total = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    desconto = models.DecimalField(max_digits=10, decimal_places=2, default=0.00) # Novo campo
     forma_pagamento = models.CharField(max_length=50, default='DINHEIRO')
     def __str__(self): return f"Venda #{self.id}"
 
@@ -102,8 +104,15 @@ class Historico(models.Model):
 # 10. DESPESA (FINANCEIRO)
 class Despesa(models.Model):
     TIPO_CHOICES = [
-        ('FIXA', 'Despesa Fixa (Luz, Água, Aluguel)'),
-        ('BOLETO', 'Boleto Fornecedor'),
+        ('MERCADORIA', 'Fornecedor / Mercadoria'),
+        ('AGUA', 'Conta de Água'),
+        ('LUZ', 'Conta de Luz / Energia'),
+        ('INTERNET', 'Internet / Telefone'),
+        ('ALUGUEL', 'Aluguel'),
+        ('FUNCIONARIOS', 'Salários / Funcionários'),
+        ('MANUTENCAO', 'Manutenção / Reparos'),
+        ('IMPOSTOS', 'Impostos / Taxas'),
+        ('FIXA', 'Outras Despesas Fixas'), # Mantido para compatibilidade
         ('OUTRO', 'Outros Gastos'),
     ]
     

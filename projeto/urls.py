@@ -23,7 +23,10 @@ from core.views import (
     DespesaViewSet,
     DashboardResumoView, 
     GraficoVendasView,
-    usuario_atual  # <--- ADICIONEI ESTE IMPORT AQUI
+    RelatorioVendasView,     # <--- NOVO
+    RelatorioInventarioView, # <--- NOVO
+    RelatorioDespesasView,   # <--- NOVO
+    usuario_atual            
 )
 
 router = DefaultRouter()
@@ -50,7 +53,12 @@ urlpatterns = [
     path('api/grafico-vendas/', GraficoVendasView.as_view(), name='grafico-vendas'),
     
     # --- ROTA DE CONTROLE DE ACESSO (CARGOS) ---
-    path('api/usuario-atual/', usuario_atual, name='usuario-atual'), # <--- ADICIONEI ESTA LINHA
+    path('api/usuario-atual/', usuario_atual, name='usuario-atual'),
+
+    # --- RELATÓRIOS ---
+    path('api/relatorio-vendas/', RelatorioVendasView.as_view(), name='relatorio-vendas'),
+    path('api/relatorio-inventario/', RelatorioInventarioView.as_view(), name='relatorio-inventario'),
+    path('api/relatorio-financeiro/', RelatorioDespesasView.as_view(), name='relatorio-financeiro'),
 ]
 
 # --- LIBERA AS FOTOS EM MODO DEBUG ---

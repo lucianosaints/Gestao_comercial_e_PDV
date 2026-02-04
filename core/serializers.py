@@ -80,7 +80,7 @@ class VendaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Venda
-        fields = ['id', 'data_venda', 'valor_total', 'forma_pagamento', 'itens']
+        fields = ['id', 'data_venda', 'valor_total', 'desconto', 'forma_pagamento', 'itens']
 
     def create(self, validated_data):
         itens_data = validated_data.pop('itens')
