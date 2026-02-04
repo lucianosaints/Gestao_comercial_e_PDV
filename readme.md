@@ -1,7 +1,7 @@
 
 **Sistema de Gestão de Patrimônio e Ativos**
 
-O **PATRI-TECH** é uma aplicação Full-Stack desenvolvida para o controle eficiente de bens patrimoniais, unidades, categorias e gestão de usuários com permissões específicas.
+** é uma aplicação Full-Stack desenvolvida para o controle eficiente de bens patrimoniais, unidades, categorias e gestão de usuários com permissões específicas.
 
 ---
 
