@@ -1,4 +1,4 @@
-# PATRI-TECH 🏢
+
 **Sistema de Gestão de Patrimônio e Vendas (PDV)**
 
 O **PATRI-TECH** é uma aplicação Full-Stack desenvolvida para o controle eficiente de bens patrimoniais, unidades, categorias, gestão de usuários e ponto de venda (PDV).
