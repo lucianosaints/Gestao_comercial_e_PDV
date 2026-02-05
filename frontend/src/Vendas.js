@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Sidebar from './Sidebar';
 import TicketView from './components/TicketView';
-import {
 import API_BASE_URL from './config';
+import {
     FaShoppingCart, FaSearch, FaPlus, FaMinus, FaTimes,
     FaMoneyBillWave, FaBarcode, FaBox, FaTrash, FaCreditCard, FaQrcode, FaBars
 } from 'react-icons/fa';
