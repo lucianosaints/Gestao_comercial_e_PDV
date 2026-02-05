@@ -136,7 +136,11 @@ function Bens() {
         });
         fetchBens();
       } catch (error) {
-        alert("Erro ao excluir produto.");
+        if (error.response && error.response.data && error.response.data.error) {
+          alert(error.response.data.error);
+        } else {
+          alert("Erro ao excluir produto.");
+        }
       }
     }
   };

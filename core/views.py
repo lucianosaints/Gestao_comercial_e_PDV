@@ -162,6 +162,17 @@ class BemViewSet(viewsets.ModelViewSet):
             descricao="Produto atualizado."
         )
 
+    # --- 500 ERROR FIX: Catch ProtectedError on delete ---
+    def destroy(self, request, *args, **kwargs):
+        from django.db.models import ProtectedError
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except ProtectedError:
+            return Response(
+                {"error": "Este produto não pode ser excluído pois já possui vendas ou histórico registrado."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
     # --- ACTION PARA PDV (SEM PAGINAÇÃO) ---
     @action(detail=False, methods=['get'])
     def listar_todos(self, request):
