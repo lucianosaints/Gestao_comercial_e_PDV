@@ -1,109 +1,59 @@
-<<<<<<< HEAD
-# PATRI-TECH 🏢
-**Sistema de Gestão de Patrimônio e Vendas (PDV)**
+# SAKURA SYSTEM 🌸 (Gestão de Patrimônio e PDV)
 
-O **PATRI-TECH** é uma aplicação Full-Stack desenvolvida para o controle eficiente de bens patrimoniais, unidades, categorias, gestão de usuários e ponto de venda (PDV).
-=======
-
-**Sistema de Gestão de Patrimônio e Ativos**
-
-** é uma aplicação Full-Stack desenvolvida para o controle eficiente de bens patrimoniais, unidades, categorias e gestão de usuários com permissões específicas.
->>>>>>> f535071f4e5a9dd4efa3b75fd526ffb5d246e4d8
+Sistema completo de gestão comercial, incluindo controle de estoque, ponto de venda (PDV), dashboard financeiro e controle de acesso.
 
 ---
 
 ## 🛠 Tecnologias Utilizadas
 
-Este projeto foi construído utilizando uma arquitetura moderna separada em **Backend (API)** e **Frontend (Interface)**.
-
-### 🐍 Backend (Servidor & API)
-* **Linguagem:** Python 3.12+
-* **Framework Principal:** Django 5.x
-* **API:** Django REST Framework (DRF)
-* **Banco de Dados:** SQLite (Desenvolvimento)
-* **Autenticação:** JWT (JSON Web Tokens)
-* **Relatórios:** ReportLab (PDF) e OpenPyXL (Excel)
-
-### ⚛️ Frontend (Interface do Usuário)
-* **Biblioteca Principal:** React.js
-* **Comunicação HTTP:** Axios
-* **Roteamento:** React Router Dom
-* **Ícones:** React Icons (FontAwesome)
+* **Backend:** Python (Django Rest Framework)
+* **Frontend:** React.js
+* **Banco de Dados:** SQLite (Dev)
+* **Autenticação:** JWT
 
 ---
 
 ## ⚙️ Funcionalidades Principais
 
-* **Dashboard Interativo:** 
-    * Cards coloridos com métricas em tempo real.
-    * **[NOVO] Alerta de Estoque:** Monitoramento visual de produtos com estoque baixo (padrão < 2).
-    * Gráficos de vendas e performance.
+### 🛒 Frente de Caixa (PDV)
+* **Vendas Rápidas:** Interface otimizada para operação ágil.
+* **Pagamentos:** Múltiplas formas (Dinheiro, Cartão, Pix, Mumbuca).
+* **Integrações:** Leitor de código de barras, Impressão de Cupom e Envio por WhatsApp.
 
-* **Ponto de Venda (PDV):**
-    * Adição de produtos ao carrinho com verificação de estoque.
-    * **[NOVO] Desconto Manual:** Aplicação de desconto em valor (R$) antes de finalizar.
-    * Múltiplas formas de pagamento (Dinheiro, Pix, Crédito, Débito, Mumbuca).
-    * Geração automática de ticket de venda na tela.
+### 📦 Gestão de Estoque
+* **Cadastro Completo:** Produtos com fotos, categorias e fornecedores.
+* **Importação XML:** Entrada de notas fiscais automática.
+* **Alerta de Estoque:** Avisa quando produtos estão acabando.
+* **Etiquetas:** Gerador de etiquetas de código de barras (PDF).
 
-* **Gestão de Bens (Produtos):** 
-    * Controle completo de ativos com imagens, valores e categorias.
-    * Histórico de alterações por produto.
-    * **[NOVO] Exportação para Excel:** Download do inventário completo em planilha.
+### 💰 Financeiro
+* **Contas a Pagar:** Gestão de despesas (Luz, Aluguel, Fornecedores).
+* **Painel Gerencial:** Gráficos de vendas, lucros e despesas.
+* **Relatórios:** Exportação para Excel e PDF.
 
-* **Relatórios Gerenciais:**
-    * **[NOVO] Relatório de Vendas (PDF):** Documento detalhado com todas as transações, filtrável por data.
-
-* **Controle de Acesso:**
-    * Sistema de login seguro.
-    * Perfis de usuário (Gerente, Vendedor, Estoquista).
+### 🔒 Controle de Acesso
+* **Vendedor:** Acesso restrito ao PDV e Clientes.
+* **Gerente:** Acesso total (Financeiro, Configurações).
 
 ---
 
 ## 🚀 Como Rodar o Projeto
 
-Para rodar o sistema, é necessário iniciar o servidor Backend e o servidor Frontend em terminais separados.
-
-### 1. Rodando o Backend (Django)
+### 1. Backend (Django)
 ```bash
-# Entre na pasta raiz e ative o ambiente virtual
-source .venv/Scripts/activate  # Windows (Git Bash)
-# ou
-.venv\Scripts\activate     # Windows (CMD/PowerShell)
-
-# Instale as dependências (incluindo as novas)
+source .venv/Scripts/activate
 pip install -r requirements.txt
-
-# Execute as migrações do banco (caso existam atualizações)
 python manage.py migrate
-
-# Inicie o servidor
 python manage.py runserver
 ```
-O Backend rodará em: `http://127.0.0.1:8000/`
 
-### 2. Rodando o Frontend (React)
+### 2. Frontend (React)
 ```bash
-# Entre na pasta do frontend
 cd frontend
-
-# Instale as dependências
 npm install
-
-# Inicie o servidor de desenvolvimento
-<<<<<<< HEAD
 npm start
 ```
-O Frontend abrirá automaticamente em: `http://localhost:3000/`
+Acesse: `http://localhost:3000`
 
 ---
-
-## 📦 Dependências Adicionadas Recentemente
-- `reportlab`: Geração de PDFs.
-- `openpyxl`: Geração de planilhas Excel.
-
----
-
 **Desenvolvido por Luciano Saints**
-=======
-npm start.
->>>>>>> f535071f4e5a9dd4efa3b75fd526ffb5d246e4d8
