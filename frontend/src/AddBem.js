@@ -46,10 +46,10 @@ function AddBem() {
 
     try {
       const [resUnidades, resCategorias, resSalas, resFornecedores] = await Promise.all([
-        axios.get(`${API_BASE_URL}/api/unidades/', config),
-        axios.get(`${API_BASE_URL}/api/categorias/', config),
-        axios.get(`${API_BASE_URL}/api/salas/', config),
-        axios.get(`${API_BASE_URL}/api/fornecedores/', config)
+        axios.get(`${API_BASE_URL}/api/unidades/`, config),
+        axios.get(`${API_BASE_URL}/api/categorias/`, config),
+        axios.get(`${API_BASE_URL}/api/salas/`, config),
+        axios.get(`${API_BASE_URL}/api/fornecedores/`, config)
       ]);
 
       setUnidades(resUnidades.data);
@@ -112,7 +112,7 @@ function AddBem() {
     }
 
     try {
-      await axios.post(`${API_BASE_URL}/api/bens/', data, {
+      await axios.post(`${API_BASE_URL}/api/bens/`, data, {
         headers: { Authorization: `Bearer ${token}` }
       });
       alert('Produto cadastrado com sucesso!');

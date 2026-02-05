@@ -106,7 +106,7 @@ function Bens() {
     };
 
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/bens/', {
+      const response = await axios.get(`${API_BASE_URL}/api/bens/`, {
         headers: { Authorization: `Bearer ${token}` },
         params: apiParams
       });
@@ -207,7 +207,7 @@ function Bens() {
             <button onClick={async () => {
               const token = localStorage.getItem('access_token');
               try {
-                const response = await axios.get(`${API_BASE_URL}/api/relatorio-inventario/', {
+                const response = await axios.get(`${API_BASE_URL}/api/relatorio-inventario/`, {
                   headers: { Authorization: `Bearer ${token}` },
                   responseType: 'blob'
                 });

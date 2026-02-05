@@ -27,7 +27,7 @@ function EditSala() {
 
       try {
         // 1. Busca Lojas
-        const resUnidades = await axios.get(`${API_BASE_URL}/api/unidades/', config);
+        const resUnidades = await axios.get(`${API_BASE_URL}/api/unidades/`, config);
         setUnidades(resUnidades.data);
 
         // 2. Se for Edição, busca Sala
@@ -61,7 +61,7 @@ function EditSala() {
         await axios.put(`${API_BASE_URL}/api/salas/${id}/`, payload, config);
         alert('Local atualizado!');
       } else {
-        await axios.post(`${API_BASE_URL}/api/salas/', payload, config);
+        await axios.post(`${API_BASE_URL}/api/salas/`, payload, config);
         alert('Local criado com sucesso!');
       }
       navigate('/salas');

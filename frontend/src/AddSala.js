@@ -18,7 +18,7 @@ function AddSala() {
     const config = { headers: { Authorization: `Bearer ${token}` } };
     
     // Carrega as unidades (Lojas) para vincular o novo local
-    axios.get(`${API_BASE_URL}/api/unidades/', config)
+    axios.get(`${API_BASE_URL}/api/unidades/`, config)
       .then(res => setUnidades(res.data))
       .catch(err => console.error(err));
   }, []);
@@ -29,7 +29,7 @@ function AddSala() {
     const config = { headers: { Authorization: `Bearer ${token}` } };
 
     try {
-      await axios.post(`${API_BASE_URL}/api/salas/', {
+      await axios.post(`${API_BASE_URL}/api/salas/`, {
         nome: nome,
         unidade: unidadeId
       }, config);

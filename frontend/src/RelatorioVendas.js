@@ -19,7 +19,7 @@ function RelatorioVendas() {
   const carregarVendas = async () => {
     const token = localStorage.getItem('access_token');
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/vendas/', {
+      const response = await axios.get(`${API_BASE_URL}/api/vendas/`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       // Filtra pela data e inverte a ordem (mais recente primeiro)
@@ -55,7 +55,7 @@ function RelatorioVendas() {
           <button onClick={async () => {
             const token = localStorage.getItem('access_token');
             try {
-              const response = await axios.get(`${API_BASE_URL}/api/relatorio-vendas/', {
+              const response = await axios.get(`${API_BASE_URL}/api/relatorio-vendas/`, {
                 headers: { Authorization: `Bearer ${token}` },
                 responseType: 'blob'
               });

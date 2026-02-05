@@ -57,7 +57,7 @@ function Vendas() {
         const token = localStorage.getItem('access_token');
         if (!token) return;
         try {
-            const response = await axios.get(`${API_BASE_URL}/api/bens/listar_todos/', {
+            const response = await axios.get(`${API_BASE_URL}/api/bens/listar_todos/`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const ativos = response.data.filter(p => !p.data_baixa);
@@ -127,7 +127,7 @@ function Vendas() {
                 }))
             };
 
-            const response = await axios.post(`${API_BASE_URL}/api/vendas/', dadosVenda, {
+            const response = await axios.post(`${API_BASE_URL}/api/vendas/`, dadosVenda, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 

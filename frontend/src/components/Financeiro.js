@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import Sidebar from '../Sidebar';
 import { FaCheckCircle, FaPlus, FaTrash, FaCalendarAlt } from 'react-icons/fa';
-import API_BASE_URL from ../config';
+import API_BASE_URL from '../config';
 
 function Financeiro() {
     // Detecta Mobile
@@ -28,7 +28,7 @@ function Financeiro() {
     });
 
     const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
-    const API_URL = `${API_BASE_URL}/api/despesas/';
+    const API_URL = `${API_BASE_URL}/api/despesas/`;
 
     // Monitora redimensionamento da tela
     useEffect(() => {

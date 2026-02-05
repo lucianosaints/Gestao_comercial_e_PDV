@@ -61,7 +61,7 @@ function UnidadeDetalhes() {
       return;
     }
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/bens/', {
+      const response = await axios.get(`${API_BASE_URL}/api/bens/`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       // Filtra apenas os produtos desta loja (unidade)

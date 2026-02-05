@@ -38,10 +38,10 @@ function EditBem() {
     try {
       setIsLoading(true);
       const [resUni, resCat, resSalas, resForn] = await Promise.all([
-        axios.get(`${API_BASE_URL}/api/unidades/', config),
-        axios.get(`${API_BASE_URL}/api/categorias/', config),
-        axios.get(`${API_BASE_URL}/api/salas/', config),
-        axios.get(`${API_BASE_URL}/api/fornecedores/', config)
+        axios.get(`${API_BASE_URL}/api/unidades/`, config),
+        axios.get(`${API_BASE_URL}/api/categorias/`, config),
+        axios.get(`${API_BASE_URL}/api/salas/`, config),
+        axios.get(`${API_BASE_URL}/api/fornecedores/`, config)
       ]);
 
       setUnidades(resUni.data);

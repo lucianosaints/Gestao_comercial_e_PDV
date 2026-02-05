@@ -31,7 +31,7 @@ function Unidades() {
     const carregarUnidades = async () => {
         const token = localStorage.getItem('access_token');
         try {
-            const response = await axios.get(`${API_BASE_URL}/api/unidades/', {
+            const response = await axios.get(`${API_BASE_URL}/api/unidades/`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setUnidades(response.data);

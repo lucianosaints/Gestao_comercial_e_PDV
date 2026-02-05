@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Sidebar from '../Sidebar'; // Se estiver na pasta src, use './Sidebar'
 import { FaCalendarAlt, FaSearch, FaMoneyBillWave, FaCreditCard, FaQrcode } from 'react-icons/fa';
-import API_BASE_URL from ../config';
+import API_BASE_URL from '../config';
 
 function RelatorioVendas() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(window.innerWidth < 768);

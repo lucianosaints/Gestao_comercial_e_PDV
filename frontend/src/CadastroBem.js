@@ -16,15 +16,15 @@ function CadastroBem() {
   useEffect(() => {
     const token = localStorage.getItem('access_token');
     const config = { headers: { Authorization: `Bearer ${token}` } };
-    axios.get(`${API_BASE_URL}/api/unidades/', config).then(res => setUnidades(res.data));
-    axios.get(`${API_BASE_URL}/api/categorias/', config).then(res => setCategorias(res.data));
+    axios.get(`${API_BASE_URL}/api/unidades/`, config).then(res => setUnidades(res.data));
+    axios.get(`${API_BASE_URL}/api/categorias/`, config).then(res => setCategorias(res.data));
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem('access_token');
     try {
-      await axios.post(`${API_BASE_URL}/api/bens/', formData, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.post(`${API_BASE_URL}/api/bens/`, formData, { headers: { Authorization: `Bearer ${token}` } });
       alert('Cadastrado com sucesso!');
       navigate('/bens');
     } catch (err) { alert('Erro ao salvar.'); }

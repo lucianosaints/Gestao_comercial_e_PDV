@@ -18,7 +18,7 @@ function AddCategoria() {
     const token = localStorage.getItem('access_token');
     
     try {
-      await axios.post(`${API_BASE_URL}/api/categorias/', 
+      await axios.post(`${API_BASE_URL}/api/categorias/`, 
         { nome: nome }, 
         { headers: { Authorization: `Bearer ${token}` } }
       );

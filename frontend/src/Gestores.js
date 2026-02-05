@@ -20,7 +20,7 @@ function Gestores() {
   const carregarGestores = async () => {
     const token = localStorage.getItem('access_token');
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/gestores/', {
+      const response = await axios.get(`${API_BASE_URL}/api/gestores/`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setGestores(response.data);

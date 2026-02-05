@@ -24,7 +24,7 @@ function AddGestor() {
     const carregarUnidades = async () => {
         const token = localStorage.getItem('access_token');
         try {
-            const response = await axios.get(`${API_BASE_URL}/api/unidades/', {
+            const response = await axios.get(`${API_BASE_URL}/api/unidades/`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             setListaUnidades(response.data);
@@ -42,7 +42,7 @@ function AddGestor() {
     const dadosParaEnviar = { ...formData, password: formData.password || 'mudar123' };
 
     try {
-      await axios.post(`${API_BASE_URL}/api/gestores/', dadosParaEnviar, {
+      await axios.post(`${API_BASE_URL}/api/gestores/`, dadosParaEnviar, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       alert('Usuário cadastrado com sucesso!');

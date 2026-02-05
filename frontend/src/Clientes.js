@@ -30,7 +30,7 @@ function Clientes() {
     const carregarClientes = async () => {
         const token = localStorage.getItem('access_token');
         try {
-            const response = await axios.get(`${API_BASE_URL}/api/clientes/', {
+            const response = await axios.get(`${API_BASE_URL}/api/clientes/`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setClientes(response.data);

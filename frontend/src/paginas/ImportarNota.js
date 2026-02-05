@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useDropzone } from 'react-dropzone';
 import Sidebar from '../Sidebar';
 import { FaCloudUploadAlt, FaCheck, FaTimes, FaBox, FaExclamationTriangle } from 'react-icons/fa';
-import API_BASE_URL from ../config';
+import API_BASE_URL from '../config';
 
 function ImportarNota() {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(window.innerWidth < 768);
@@ -34,7 +34,7 @@ function ImportarNota() {
 
         try {
             const token = localStorage.getItem('access_token');
-            const response = await axios.post(`${API_BASE_URL}/api/importar-xml/', formData, {
+            const response = await axios.post(`${API_BASE_URL}/api/importar-xml/`, formData, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'
@@ -55,7 +55,7 @@ function ImportarNota() {
         setLoading(true);
         try {
             const token = localStorage.getItem('access_token');
-            const response = await axios.post(`${API_BASE_URL}/api/importar-xml/', previewData, {
+            const response = await axios.post(`${API_BASE_URL}/api/importar-xml/`, previewData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 

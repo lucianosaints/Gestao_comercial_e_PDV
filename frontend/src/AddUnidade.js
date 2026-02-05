@@ -21,7 +21,7 @@ function AddUnidade() {
     const token = localStorage.getItem('access_token');
 
     try {
-      await axios.post(`${API_BASE_URL}/api/unidades/',
+      await axios.post(`${API_BASE_URL}/api/unidades/`,
         { nome, endereco },
         { headers: { Authorization: `Bearer ${token}` } }
       );

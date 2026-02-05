@@ -6,7 +6,7 @@ import { FaTruck, FaPlus, FaEdit, FaTrash, FaSave, FaTimes } from 'react-icons/f
 // Como o arquivo está em src/paginas/, voltamos apenas UMA vez para achar o Sidebar na src/
 import Sidebar from '../Sidebar'; 
 import '../Dashboard.css'; 
-import API_BASE_URL from ../config';
+import API_BASE_URL from '../config';
 
 function GerenciarFornecedores() {
   const [fornecedores, setFornecedores] = useState([]);
@@ -29,7 +29,7 @@ function GerenciarFornecedores() {
   const carregarFornecedores = async () => {
     const token = localStorage.getItem('access_token');
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/fornecedores/', {
+      const response = await axios.get(`${API_BASE_URL}/api/fornecedores/`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setFornecedores(response.data);
@@ -50,7 +50,7 @@ function GerenciarFornecedores() {
         await axios.put(`${API_BASE_URL}/api/fornecedores/${editandoId}/`, formData, config);
         alert("Fornecedor atualizado com sucesso!");
       } else {
-        await axios.post(`${API_BASE_URL}/api/fornecedores/', formData, config);
+        await axios.post(`${API_BASE_URL}/api/fornecedores/`, formData, config);
         alert("Fornecedor cadastrado com sucesso!");
       }
       fecharModal();

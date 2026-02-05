@@ -23,8 +23,8 @@ function Salas() {
     try {
       // Buscamos as SALAS e as UNIDADES ao mesmo tempo
       const [resSalas, resUnidades] = await Promise.all([
-        axios.get(`${API_BASE_URL}/api/salas/', { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get(`${API_BASE_URL}/api/unidades/', { headers: { Authorization: `Bearer ${token}` } })
+        axios.get(`${API_BASE_URL}/api/salas/`, { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`${API_BASE_URL}/api/unidades/`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
       
       setSalas(resSalas.data);

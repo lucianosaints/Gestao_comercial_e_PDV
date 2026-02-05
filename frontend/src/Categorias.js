@@ -21,13 +21,13 @@ function Categorias() {
     try {
       setLoading(true);
       // Tentativa 1: Rota no plural (Padrão)
-      const response = await axios.get(`${API_BASE_URL}/api/categorias/', config);
+      const response = await axios.get(`${API_BASE_URL}/api/categorias/`, config);
       setCategorias(response.data);
     } catch (error) {
       console.warn("Rota plural falhou, tentando singular...", error);
       try {
         // Tentativa 2: Rota no singular (Caso o backend esteja diferente)
-        const responseAlt = await axios.get(`${API_BASE_URL}/api/categoria/', config);
+        const responseAlt = await axios.get(`${API_BASE_URL}/api/categoria/`, config);
         setCategorias(responseAlt.data);
       } catch (errAlt) {
         console.error("Erro total ao carregar categorias.");

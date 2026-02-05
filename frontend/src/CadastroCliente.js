@@ -35,7 +35,7 @@ function CadastroCliente({ onClose, aoSalvar, clienteEdicao }) {
                 });
                 alert("Cliente atualizado com sucesso!");
             } else {
-                await axios.post(`${API_BASE_URL}/api/clientes/', dados, {
+                await axios.post(`${API_BASE_URL}/api/clientes/`, dados, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 alert("Cliente cadastrado com sucesso!");
