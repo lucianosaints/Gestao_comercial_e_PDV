@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import {
   FaHome, FaCashRegister, FaChartLine, FaBox, FaWarehouse,
   FaStore, FaLayerGroup, FaUserTie, FaSignOutAlt, FaBars,
-  FaTruck, FaCalculator
+  FaTruck, FaCalculator, FaFileImport
 } from 'react-icons/fa';
 
 function Sidebar({ isCollapsed, toggleCollapse }) {
@@ -110,28 +110,31 @@ function Sidebar({ isCollapsed, toggleCollapse }) {
 
   // --- LISTA DE MENUS FILTRADA POR CARGO ---
   const menuItems = [
-    // Todo mundo vê o Painel
-    { title: 'Painel Principal', icon: <FaHome size={20} />, path: '/dashboard' },
+    // Dashboard apenas para Gerentes (Ou todos MENOS vendedor, se preferir)
+    ...(isGerente ? [
+      { title: 'Painel Geral', icon: <FaHome size={20} />, path: '/dashboard' },
+    ] : []),
 
     // Vendedor e Gerente vêem vendas
     ...(isVendedor ? [
-      { title: 'Frente de Caixa (PDV)', icon: <FaCashRegister size={20} />, path: '/vendas' },
+      { title: 'Frente de Caixa (PDV)', icon: <FaCashRegister size={20} />, path: '/pdv' },
+
       { title: 'Relatório Vendas', icon: <FaChartLine size={20} />, path: '/relatorio-vendas' },
     ] : []),
 
     // SÓ GERENTE vê Financeiro
     ...(isGerente ? [
-      { title: 'Financeiro (Saídas)', icon: <FaCalculator size={20} />, path: '/financeiro' },
+      { title: 'Dashboard Financeiro', icon: <FaChartLine size={20} />, path: '/dashboard-financeiro' },
+      { title: 'Contas a Pagar', icon: <FaCalculator size={20} />, path: '/despesas' },
+      { title: 'Importar XML (NFe)', icon: <FaFileImport size={20} />, path: '/importar-nota' }, // <--- NOVO
     ] : []),
 
     // Seções de Gestão
     { section: 'GESTÃO' },
 
-    // Todos vêem Produtos
-    { title: 'Produtos', icon: <FaBox size={20} />, path: '/bens' },
-
-    // Estoque e Gerente vêem Fornecedores e Locais
+    // Estoque e Gerente vêem Produtos, Fornecedores e Locais (Vendedor NÃO vê lista de produtos para não editar)
     ...(isEstoque ? [
+      { title: 'Produtos (Estoque)', icon: <FaBox size={20} />, path: '/bens' },
       { title: 'Fornecedores', icon: <FaTruck size={20} />, path: '/fornecedores' },
       { title: 'Locais de Estoque', icon: <FaWarehouse size={20} />, path: '/salas' },
     ] : []),

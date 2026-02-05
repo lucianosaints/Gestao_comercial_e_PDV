@@ -6,6 +6,8 @@ import Login from './Login';
 import Dashboard from './Dashboard';
 import Financeiro from './components/Financeiro';
 import Vendas from './Vendas';
+import PDV from './paginas/PDV'; // <--- NOVO
+
 
 // --- PRODUTOS (Bens) ---
 import Bens from './Bens';
@@ -28,11 +30,12 @@ import Salas from './Salas';
 import EditSala from './EditSala';
 
 // --- GESTÃO E RELATÓRIOS ---
-// AQUI ESTAVA O ERRO! Mudamos para pegar o arquivo da raiz (./Gestores)
 import Gestores from './Gestores';
 import AddGestor from './AddGestor';
 import RelatorioVendas from './paginas/TelaRelatorio';
 import GerenciarFornecedores from './paginas/GerenciarFornecedores';
+import DashboardFinanceiro from './paginas/DashboardFinanceiro'; // <--- NOVO IMPORT
+import ImportarNota from './paginas/ImportarNota'; // <--- NOVO IMPORT
 import Clientes from './Clientes';
 
 // Proteção de Rota
@@ -41,17 +44,44 @@ const PrivateRoute = ({ children }) => {
   return token ? children : <Navigate to="/login" />;
 };
 
+const RestrictedRoute = ({ children, allowedRoles }) => {
+  const token = localStorage.getItem('access_token');
+  const userRole = localStorage.getItem('user_role') || 'vendedor';
+
+  if (!token) return <Navigate to="/login" />;
+
+  // Se o cargo atual não está na lista permitida, redireciona
+  if (!allowedRoles.includes(userRole)) {
+    // Se for vendedor tentando acessar coisa restrita, joga pro PDV
+    if (userRole === 'vendedor') return <Navigate to="/pdv" />;
+    return <Navigate to="/dashboard" />;
+  }
+  return children;
+};
+
+const HomeRedirect = () => {
+  const token = localStorage.getItem('access_token');
+  const userRole = localStorage.getItem('user_role') || 'vendedor';
+  if (!token) return <Navigate to="/login" />;
+
+  // Vendedor vai direto pro PDV
+  if (userRole === 'vendedor') return <Navigate to="/pdv" />;
+  return <Navigate to="/dashboard" />;
+};
+
 function App() {
   return (
     <Router>
       <Routes>
         {/* Rota Inicial e Login */}
         <Route path="/login" element={<Login />} />
-        <Route path="/" element={<Navigate to="/dashboard" />} />
-        <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/" element={<HomeRedirect />} />
+        <Route path="/dashboard" element={<RestrictedRoute allowedRoles={['gerente']}><Dashboard /></RestrictedRoute>} />
 
         {/* --- PRODUTOS --- */}
-        <Route path="/bens" element={<PrivateRoute><Bens /></PrivateRoute>} />
+        {/* --- PRODUTOS (Gerente e Estoque) --- */}
+        <Route path="/bens" element={<RestrictedRoute allowedRoles={['gerente', 'estoque']}><Bens /></RestrictedRoute>} />
         <Route path="/add-bem" element={<PrivateRoute><AddBem /></PrivateRoute>} />
         <Route path="/cadastro-bem" element={<PrivateRoute><AddBem /></PrivateRoute>} />
         <Route path="/edit-bem/:id" element={<PrivateRoute><EditBem /></PrivateRoute>} />
@@ -69,19 +99,23 @@ function App() {
 
         {/* --- LOCAIS DE ESTOQUE (SALAS) --- */}
         <Route path="/salas" element={<PrivateRoute><Salas /></PrivateRoute>} />
-
         <Route path="/add-sala" element={<PrivateRoute><EditSala /></PrivateRoute>} />
-
         <Route path="/salas/:id" element={<PrivateRoute><EditSala /></PrivateRoute>} />
         <Route path="/salas/:id/bens" element={<PrivateRoute><BensPorSala /></PrivateRoute>} />
 
         {/* --- FORNECEDORES --- */}
-        <Route path="/fornecedores" element={<PrivateRoute><GerenciarFornecedores /></PrivateRoute>} />
+        {/* --- FORNECEDORES (Gerente e Estoque) --- */}
+        <Route path="/fornecedores" element={<RestrictedRoute allowedRoles={['gerente', 'estoque']}><GerenciarFornecedores /></RestrictedRoute>} />
 
-        {/* --- VENDAS E FINANCEIRO --- */}
+// --- VENDAS E FINANCEIRO ---
         <Route path="/vendas" element={<PrivateRoute><Vendas /></PrivateRoute>} />
-        <Route path="/financeiro" element={<PrivateRoute><Financeiro /></PrivateRoute>} />
+        <Route path="/pdv" element={<PrivateRoute><PDV /></PrivateRoute>} /> {/* NOVA ROTA PDV */}
+        <Route path="/despesas" element={<PrivateRoute><Financeiro /></PrivateRoute>} />
+        <Route path="/pdv" element={<PrivateRoute><PDV /></PrivateRoute>} /> {/* PDV é livre para autênticados */}
+        <Route path="/despesas" element={<RestrictedRoute allowedRoles={['gerente']}><Financeiro /></RestrictedRoute>} />
+        <Route path="/dashboard-financeiro" element={<RestrictedRoute allowedRoles={['gerente']}><DashboardFinanceiro /></RestrictedRoute>} /> {/* Nova Rota */}
         <Route path="/relatorio-vendas" element={<PrivateRoute><RelatorioVendas /></PrivateRoute>} />
+        <Route path="/importar-nota" element={<RestrictedRoute allowedRoles={['gerente']}><ImportarNota /></RestrictedRoute>} /> {/* NOVA ROTA IMPORT */}
 
         {/* --- CLIENTES --- */}
         <Route path="/clientes" element={<PrivateRoute><Clientes /></PrivateRoute>} />

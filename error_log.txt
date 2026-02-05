@@ -1,0 +1,19 @@
+Traceback (most recent call last):
+  File "C:\Users\Usuario\Desktop\PROJETO SAKURA\sakura-presente\debug_etiquetas.py", line 8, in <module>
+    django.setup()
+    ~~~~~~~~~~~~^^
+  File "C:\Users\Usuario\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\__init__.py", line 24, in setup
+    apps.populate(settings.INSTALLED_APPS)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Usuario\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\apps\registry.py", line 91, in populate
+    app_config = AppConfig.create(entry)
+  File "C:\Users\Usuario\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\apps\config.py", line 222, in create
+    return app_config_class(app_name, app_module)
+  File "C:\Users\Usuario\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\apps\config.py", line 47, in __init__
+    self.path = self._path_from_module(app_module)
+                ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\Usuario\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\apps\config.py", line 86, in _path_from_module
+    raise ImproperlyConfigured(
+    ...<3 lines>...
+    )
+django.core.exceptions.ImproperlyConfigured: The app module <module 'core' (namespace) from ['C:\\Users\\Usuario\\Desktop\\PROJETO SAKURA\\sakura-presente\\core', 'c:\\Users\\Usuario\\Desktop\\PROJETO SAKURA\\sakura-presente\\core']> has multiple filesystem locations (['c:\\Users\\Usuario\\Desktop\\PROJETO SAKURA\\sakura-presente\\core', 'C:\\Users\\Usuario\\Desktop\\PROJETO SAKURA\\sakura-presente\\core']); you must configure this app with an AppConfig subclass with a 'path' class attribute.

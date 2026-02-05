@@ -1,0 +1,3 @@
+Iniciando teste de geração de etiquetas...
+Total de bens: 10
+PDF gerado com sucesso!

@@ -15,7 +15,9 @@ from .views import (
     RelatorioVendasView,     # <--- NOVO
     RelatorioInventarioView, # <--- NOVO
     usuario_atual,           # <--- NOVO
-    ClienteViewSet           # <--- NOVO
+    ClienteViewSet,           # <--- NOVO
+    EtiquetasPDFView,
+    ImportarXMLView
 )
 
 router = DefaultRouter()
@@ -34,7 +36,9 @@ urlpatterns = [
     path('', include(router.urls)),
     path('dashboard-resumo/', DashboardResumoView.as_view(), name='dashboard-resumo'),
     path('grafico-vendas/', GraficoVendasView.as_view(), name='grafico-vendas'),
-    path('relatorio-vendas/', RelatorioVendasView.as_view(), name='relatorio-vendas'),         # <--- ROTA NOVA
-    path('relatorio-inventario/', RelatorioInventarioView.as_view(), name='relatorio-inventario'), # <--- ROTA NOVA
+    path('api/relatorios/vendas/', RelatorioVendasView.as_view(), name='relatorio_vendas'),
+    path('api/relatorio-inventario/', RelatorioInventarioView.as_view(), name='relatorio_inventario'),
+    path('api/relatorios/etiquetas/', EtiquetasPDFView.as_view(), name='etiquetas_pdf'), # <--- ROTA NOVA
+    path('api/importar-xml/', ImportarXMLView.as_view(), name='importar_xml'),
     path('me/', usuario_atual, name='usuario-atual'), # <--- JA QUE ESTAVA NA VIEW, VOU EXPOR AQUI
 ]

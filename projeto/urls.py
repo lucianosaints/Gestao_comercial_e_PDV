@@ -23,13 +23,15 @@ from core.views import (
     DespesaViewSet,
     DashboardResumoView, 
     GraficoVendasView,
-    RelatorioVendasView,     # <--- NOVO
-    RelatorioInventarioView, # <--- NOVO
-    RelatorioDespesasView,   # <--- NOVO
+    RelatorioVendasView,     
+    RelatorioInventarioView, 
+    RelatorioDespesasView,   
+    EtiquetasPDFView,        
+    DashboardFinanceiroView,
     usuario_atual,
     ClienteViewSet
 )
-
+    
 router = DefaultRouter()
 router.register(r'unidades', UnidadeViewSet)
 router.register(r'categorias', CategoriaViewSet)
@@ -61,6 +63,8 @@ urlpatterns = [
     path('api/relatorio-vendas/', RelatorioVendasView.as_view(), name='relatorio-vendas'),
     path('api/relatorio-inventario/', RelatorioInventarioView.as_view(), name='relatorio-inventario'),
     path('api/relatorio-financeiro/', RelatorioDespesasView.as_view(), name='relatorio-financeiro'),
+    path('api/relatorios/etiquetas/', EtiquetasPDFView.as_view(), name='etiquetas_pdf'),
+    path('api/dashboard-financeiro/', DashboardFinanceiroView.as_view(), name='dashboard-financeiro'),
 ]
 
 # --- LIBERA AS FOTOS EM MODO DEBUG ---

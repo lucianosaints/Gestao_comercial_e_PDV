@@ -22,6 +22,57 @@ function Bens() {
   const [historicoSelecionado, setHistoricoSelecionado] = useState([]);
   const [bemSelecionadoNome, setBemSelecionadoNome] = useState('');
 
+  // --- NOVO: Estado para seleção múltipla ---
+  const [selectedBens, setSelectedBens] = useState([]);
+
+  // --- Funções de Seleção ---
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      // Seleciona todos da PÁGINA ATUAL
+      const allIds = filteredBens.map(b => b.id);
+      setSelectedBens(allIds);
+    } else {
+      setSelectedBens([]);
+    }
+  };
+
+  const handleSelectOne = (id) => {
+    if (selectedBens.includes(id)) {
+      setSelectedBens(selectedBens.filter(itemId => itemId !== id));
+    } else {
+      setSelectedBens([...selectedBens, id]);
+    }
+  };
+
+  const handleGerarEtiquetas = async () => {
+    if (selectedBens.length === 0) {
+      alert("Selecione pelo menos um produto para gerar etiquetas.");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('access_token');
+      // Envia IDs como query param: ?ids=1,2,3
+      const idsParam = selectedBens.join(',');
+
+      const response = await axios.get(`http://127.0.0.1:8000/api/relatorios/etiquetas/?ids=${idsParam}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob'
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'etiquetas.pdf');
+      document.body.appendChild(link);
+      link.click();
+
+    } catch (error) {
+      console.error("Erro ao gerar etiquetas:", error);
+      alert("Erro ao gerar etiquetas. Tente novamente.");
+    }
+  };
+
   useEffect(() => {
     fetchBens(1);
     const handleResize = () => {
@@ -169,6 +220,13 @@ function Bens() {
             }} style={{ padding: '10px 15px', borderRadius: '5px', backgroundColor: '#10b981', color: 'white', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
               <FaBox /> Exportar Excel
             </button>
+
+            {/* BOTÃO DE ETIQUETAS (NOVO) */}
+            {selectedBens.length > 0 && (
+              <button onClick={handleGerarEtiquetas} style={{ padding: '10px 15px', borderRadius: '5px', backgroundColor: '#8b5cf6', color: 'white', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <FaBarcode /> Gerar Etiquetas ({selectedBens.length})
+              </button>
+            )}
           </div>
         </div>
 
@@ -188,6 +246,13 @@ function Bens() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: '2px solid #007bff', textAlign: 'left', backgroundColor: '#f8f9fa', color: '#333' }}>
+                  <th style={{ padding: '15px', width: '40px' }}>
+                    <input
+                      type="checkbox"
+                      onChange={handleSelectAll}
+                      checked={filteredBens.length > 0 && selectedBens.length === filteredBens.length}
+                    />
+                  </th>
                   <th style={{ padding: '15px' }}><FaBarcode /> Cód. Barras</th>
                   <th style={{ padding: '15px' }}><FaBox /> Produto</th>
                   <th style={{ padding: '15px' }}>Loja / Estoque</th>
@@ -197,7 +262,15 @@ function Bens() {
               </thead>
               <tbody>
                 {filteredBens.map((bem) => (
-                  <tr key={bem.id} style={{ borderBottom: '1px solid #eee' }}>
+                  <tr key={bem.id} style={{ borderBottom: '1px solid #eee', backgroundColor: selectedBens.includes(bem.id) ? '#f3f4f6' : 'white' }}>
+
+                    <td style={{ padding: '15px' }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedBens.includes(bem.id)}
+                        onChange={() => handleSelectOne(bem.id)}
+                      />
+                    </td>
 
                     <td style={{ padding: '15px', fontFamily: 'monospace', fontWeight: 'bold', color: '#555' }}>
                       {bem.tombo || '---'}

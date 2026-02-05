@@ -28,6 +28,9 @@ from .serializers import (
     VendaSerializer, FornecedorSerializer, DespesaSerializer, ClienteSerializer
 )
 
+# --- 3. UTILITÁRIOS ---
+from .utils.xml_parser import parse_nfe_xml
+
 # =================================================
 # VIEWSETS (CRUDs PADRÃO)
 # =================================================
@@ -273,6 +276,131 @@ class RelatorioVendasView(APIView):
         response['Content-Disposition'] = 'attachment; filename="relatorio_vendas.pdf"'
         return response
 
+# =================================================
+# IMPORTAÇÃO DE XML
+# =================================================
+class ImportarXMLView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        """
+        Recebe o arquivo XML e retorna o preview.
+        """
+        acao = request.data.get('acao') # 'preview' ou 'confirmar'
+
+        if acao == 'confirmar':
+            return self.confirmar_importacao(request)
+        
+        # --- PREVIEW ---
+        arquivo = request.FILES.get('arquivo')
+        if not arquivo:
+            return Response({"error": "Nenhum arquivo enviado"}, status=400)
+
+        dados_xml = parse_nfe_xml(arquivo.read())
+        if "error" in dados_xml:
+            return Response(dados_xml, status=400)
+
+        # Cruza dados com o banco
+        itens_preview = []
+        for item in dados_xml['itens']:
+            ean = item['ean']
+            # Tenta achar produto existente pelo EAN ou Código de Barras
+            produto_existente = Bem.objects.filter(codigo_barras=ean).first()
+            
+            if produto_existente:
+                itens_preview.append({
+                    "status": "ATUALIZAR",
+                    "id": produto_existente.id,
+                    "nome_xml": item['nome'],
+                    "nome_sistema": produto_existente.nome,
+                    "ean": ean,
+                    "qtd_xml": item['quantidade'],
+                    "estoque_atual": produto_existente.quantidade,
+                    "valor_custo_xml": item['valor_unitario'],
+                    "valor_venda_atual": produto_existente.valor
+                })
+            else:
+                itens_preview.append({
+                    "status": "NOVO",
+                    "nome_xml": item['nome'],
+                    "ean": ean,
+                    "qtd_xml": item['quantidade'],
+                    "valor_custo_xml": item['valor_unitario'],
+                    "sugestao_venda": item['valor_unitario'] * 2 # Sugere 100% de margem
+                })
+
+        return Response({
+            "nota": {
+                "numero": dados_xml['numero'],
+                "fornecedor": dados_xml['fornecedor']
+            },
+            "itens": itens_preview
+        })
+
+    def confirmar_importacao(self, request):
+        """
+        Recebe a lista validada pelo usuário e salva no banco.
+        """
+        dados = request.data
+        nota = dados.get('nota')
+        itens = dados.get('itens')
+        
+        # 1. Cadastra/Busca Fornecedor
+        cnpj = nota['fornecedor']['cnpj']
+        fornec, created = Fornecedor.objects.get_or_create(
+            cnpj_cpf=cnpj,
+            defaults={'nome': nota['fornecedor']['nome']}
+        )
+
+        salvos = 0
+        erros = 0
+
+        # Pega uma unidade/categoria padrão para novos (pode vir do front também, mas vamos simplificar)
+        unidade_padrao = Unidade.objects.first()
+        categoria_padrao = Categoria.objects.first()
+
+        if not unidade_padrao or not categoria_padrao:
+             return Response({"error": "Cadastre pelo menos uma Unidade e Categoria antes de importar."}, status=400)
+
+        for item in itens:
+            try:
+                if item['status'] == 'ATUALIZAR':
+                    prod = Bem.objects.get(id=item['id'])
+                    prod.quantidade += float(item['qtd_xml'])
+                    # Opcional: Atualizar preço de custo?? Por enquanto não temos campo custo no Bem, só valor (venda).
+                    # Vamos manter o valor venda atual, a menos que o usuário tenha mandado alterar.
+                    if 'novo_preco_venda' in item and item['novo_preco_venda']:
+                         prod.valor = float(item['novo_preco_venda'])
+                    
+                    prod.save()
+                    msg_hist = f"Estoque atualizado via XML (NF {nota['numero']}). +{item['qtd_xml']} un."
+                    
+                else: # NOVO
+                    prod = Bem.objects.create(
+                        nome=item['nome_xml'],
+                        codigo_barras=item['ean'],
+                        quantidade=float(item['qtd_xml']),
+                        valor=float(item.get('novo_preco_venda', item['sugestao_venda'])),
+                        unidade=unidade_padrao,
+                        categoria=categoria_padrao,
+                        descricao=f"Importado de NF {nota['numero']}"
+                    )
+                    msg_hist = f"Produto criado via Importação XML (NF {nota['numero']})."
+
+                # Cria Histórico
+                Historico.objects.create(
+                    bem=prod,
+                    usuario=request.user,
+                    descricao=msg_hist
+                )
+                salvos += 1
+
+            except Exception as e:
+                print(f"Erro ao salvar item {item}: {e}")
+                erros += 1
+
+        return Response({"mensagem": "Importação concluída!", "salvos": salvos, "erros": erros})
+
 class RelatorioInventarioView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -323,3 +451,117 @@ class RelatorioDespesasView(APIView):
         response = HttpResponse(excel_buffer, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
         response['Content-Disposition'] = 'attachment; filename="relatorio_financeiro.xlsx"'
         return response
+
+class EtiquetasPDFView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        ids = request.query_params.get('ids')
+        if not ids:
+            return Response({"error": "Nenhum ID fornecido"}, status=400)
+        
+        try:
+            ids_list = [int(i) for i in ids.split(',')]
+            
+            bens = Bem.objects.filter(id__in=ids_list)
+            
+            if not bens.exists():
+                return Response({"error": "Nenhum produto encontrado"}, status=404)
+
+            from .utils_relatorios import gerar_etiquetas_pdf
+            pdf_buffer = gerar_etiquetas_pdf(bens)
+            
+            response = HttpResponse(pdf_buffer, content_type='application/pdf')
+            response['Content-Disposition'] = 'attachment; filename="etiquetas.pdf"'
+            return response
+            
+        except Exception as e:
+             return Response({"error": f"Erro interno: {e}"}, status=400)
+
+from django.db.models.functions import TruncMonth
+from django.db.models import Count
+import datetime
+from django.utils import timezone
+
+class DashboardFinanceiroView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        # Data limite (6 meses atrás)
+        hoje = timezone.now()
+        seis_meses_atras = hoje - datetime.timedelta(days=180)
+
+        # 1. KPIs GERAIS
+        total_receita = Venda.objects.aggregate(Sum('valor_total'))['valor_total__sum'] or 0.00
+        total_despesa = Despesa.objects.aggregate(Sum('valor'))['valor__sum'] or 0.00
+        total_vendas_count = Venda.objects.count()
+        
+        # Ticket Médio
+        ticket_medio = total_receita / total_vendas_count if total_vendas_count > 0 else 0
+
+        # 2. GRÁFICO: RECEITA x DESPESA (Últimos 6 meses)
+        # Agrupa vendas por mês
+        vendas_mes = Venda.objects.filter(data_venda__gte=seis_meses_atras) \
+            .annotate(mes=TruncMonth('data_venda')) \
+            .values('mes') \
+            .annotate(total=Sum('valor_total')) \
+            .order_by('mes')
+            
+        # Agrupa despesas por mês
+        despesas_mes = Despesa.objects.filter(data_vencimento__gte=seis_meses_atras) \
+            .annotate(mes=TruncMonth('data_vencimento')) \
+            .values('mes') \
+            .annotate(total=Sum('valor')) \
+            .order_by('mes')
+
+        # Mescla os dados para o gráfico
+        historico = {}
+        
+        # Preenche com Vendas
+        for v in vendas_mes:
+            if v['mes']: # Proteção contra data nula
+                mes_str = v['mes'].strftime('%Y-%m')
+                historico[mes_str] = {'mes': mes_str, 'receita': float(v['total']), 'despesa': 0}
+        
+        # Preenche com Despesas
+        for d in despesas_mes:
+            if d['mes']:
+                mes_str = d['mes'].strftime('%Y-%m')
+                if mes_str not in historico:
+                    historico[mes_str] = {'mes': mes_str, 'receita': 0, 'despesa': 0}
+                historico[mes_str]['despesa'] = float(d['total'])
+                
+        # Converte para lista ordenada
+        grafico_principal = sorted(historico.values(), key=lambda x: x['mes'])
+
+        # 3. GRÁFICO DE PIZZA: Despesas por Categoria
+        despesas_cat = Despesa.objects.values('tipo') \
+            .annotate(total=Sum('valor')) \
+            .order_by('-total')
+            
+        grafico_pizza = [
+            {'name': dict(Despesa.TIPO_CHOICES).get(d['tipo'], d['tipo']), 'value': float(d['total'])}
+            for d in despesas_cat
+        ]
+
+        # 4. TOP PRODUTOS (Quantidade)
+        top_produtos_q = ItemVenda.objects.values('produto__nome') \
+            .annotate(qtd=Sum('quantidade')) \
+            .order_by('-qtd')[:5]
+            
+        top_produtos = [
+            {'nome': item['produto__nome'], 'qtd': item['qtd']}
+            for item in top_produtos_q
+        ]
+
+        return Response({
+            "kpis": {
+                "receita": float(total_receita),
+                "despesa": float(total_despesa),
+                "saldo": float(total_receita - total_despesa),
+                "ticket_medio": float(ticket_medio)
+            },
+            "grafico_mensal": grafico_principal,
+            "grafico_pizza": grafico_pizza,
+            "top_produtos": top_produtos
+        })

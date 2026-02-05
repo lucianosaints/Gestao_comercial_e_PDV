@@ -1,7 +1,14 @@
+<<<<<<< HEAD
 # PATRI-TECH 🏢
 **Sistema de Gestão de Patrimônio e Vendas (PDV)**
 
 O **PATRI-TECH** é uma aplicação Full-Stack desenvolvida para o controle eficiente de bens patrimoniais, unidades, categorias, gestão de usuários e ponto de venda (PDV).
+=======
+
+**Sistema de Gestão de Patrimônio e Ativos**
+
+** é uma aplicação Full-Stack desenvolvida para o controle eficiente de bens patrimoniais, unidades, categorias e gestão de usuários com permissões específicas.
+>>>>>>> f535071f4e5a9dd4efa3b75fd526ffb5d246e4d8
 
 ---
 
@@ -83,6 +90,7 @@ cd frontend
 npm install
 
 # Inicie o servidor de desenvolvimento
+<<<<<<< HEAD
 npm start
 ```
 O Frontend abrirá automaticamente em: `http://localhost:3000/`
@@ -96,3 +104,6 @@ O Frontend abrirá automaticamente em: `http://localhost:3000/`
 ---
 
 **Desenvolvido por Luciano Saints**
+=======
+npm start.
+>>>>>>> f535071f4e5a9dd4efa3b75fd526ffb5d246e4d8
