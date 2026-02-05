@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  backend:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    environment:
+      - DEBUG=1
+      # Quando usar PostgreSQL, adicionar configs aqui
+    command: python manage.py runserver 0.0.0.0:8000 
+    # Em produção, comente a linha acima e descomente abaixo:
+    # command: gunicorn first_steps_django.wsgi:application --bind 0.0.0.0:8000
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    # Mapeamento para desenvolvimento em tempo real (opcional)
+    # volumes:
+    #   - ./frontend:/app
+    #   - /app/node_modules
