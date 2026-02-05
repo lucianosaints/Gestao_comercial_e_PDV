@@ -6,6 +6,7 @@ import {
     PieChart, Pie, Cell
 } from 'recharts';
 import { FaArrowUp, FaArrowDown, FaMoneyBillWave, FaChartPie, FaShoppingCart } from 'react-icons/fa';
+import API_BASE_URL from ../config';
 
 function DashboardFinanceiro() {
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -29,7 +30,7 @@ function DashboardFinanceiro() {
         const fetchData = async () => {
             const token = localStorage.getItem('access_token');
             try {
-                const response = await axios.get('http://127.0.0.1:8000/api/dashboard-financeiro/', {
+                const response = await axios.get(`${API_BASE_URL}/api/dashboard-financeiro/', {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setData(response.data);

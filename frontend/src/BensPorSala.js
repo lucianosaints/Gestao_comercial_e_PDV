@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { FaBox, FaArrowLeft, FaBarcode, FaMapMarkerAlt, FaSpinner } from 'react-icons/fa';
 import './Dashboard.css';
+import API_BASE_URL from './config';
 
 function BensPorSala() {
   const { id } = useParams();
@@ -33,11 +34,11 @@ function BensPorSala() {
     try {
       setIsLoading(true);
       // 1. Busca o nome da Sala
-      const respostaSala = await axios.get(`http://127.0.0.1:8000/api/salas/${id}/`, config);
+      const respostaSala = await axios.get(`${API_BASE_URL}/api/salas/${id}/`, config);
       setSalaNome(respostaSala.data.nome);
 
       // 2. Busca os Bens FILTRANDO pela sala
-      const respostaBens = await axios.get(`http://127.0.0.1:8000/api/bens/?sala=${id}`, config);
+      const respostaBens = await axios.get(`${API_BASE_URL}/api/bens/?sala=${id}`, config);
       // Correção para suportar paginação (DRF retorna { count, results: [] })
       const dados = respostaBens.data;
       setBens(Array.isArray(dados) ? dados : (dados.results || []));

@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { FaWarehouse, FaPlus, FaBoxOpen, FaEdit, FaTrash, FaMapMarkerAlt, FaStore } from 'react-icons/fa';
+import API_BASE_URL from './config';
 
 function Salas() {
   const [salas, setSalas] = useState([]);
@@ -22,8 +23,8 @@ function Salas() {
     try {
       // Buscamos as SALAS e as UNIDADES ao mesmo tempo
       const [resSalas, resUnidades] = await Promise.all([
-        axios.get('http://127.0.0.1:8000/api/salas/', { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get('http://127.0.0.1:8000/api/unidades/', { headers: { Authorization: `Bearer ${token}` } })
+        axios.get(`${API_BASE_URL}/api/salas/', { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`${API_BASE_URL}/api/unidades/', { headers: { Authorization: `Bearer ${token}` } })
       ]);
       
       setSalas(resSalas.data);
@@ -39,7 +40,7 @@ function Salas() {
     if (window.confirm("Tem certeza? Os produtos ficarão sem local definido.")) {
       try {
         const token = localStorage.getItem('access_token');
-        await axios.delete(`http://127.0.0.1:8000/api/salas/${id}/`, {
+        await axios.delete(`${API_BASE_URL}/api/salas/${id}/`, {
            headers: { Authorization: `Bearer ${token}` }
         });
         carregarDados();

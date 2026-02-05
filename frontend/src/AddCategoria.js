@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { FaTags, FaSave, FaArrowLeft } from 'react-icons/fa';
+import API_BASE_URL from './config';
 
 function AddCategoria() {
   const navigate = useNavigate();
@@ -17,7 +18,7 @@ function AddCategoria() {
     const token = localStorage.getItem('access_token');
     
     try {
-      await axios.post('http://127.0.0.1:8000/api/categorias/', 
+      await axios.post(`${API_BASE_URL}/api/categorias/', 
         { nome: nome }, 
         { headers: { Authorization: `Bearer ${token}` } }
       );

@@ -10,6 +10,7 @@ import {
     FaCashRegister, FaUsers, FaChartLine, FaPlusCircle, FaBars, FaExclamationTriangle
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import API_BASE_URL from './config';
 
 // NÃO IMPORTAMOS CSS EXTERNO, USAMOS ESTILO DIRETO
 // import './Dashboard.css'; 
@@ -56,13 +57,13 @@ function Dashboard() {
         const config = { headers: { Authorization: `Bearer ${token}` } };
 
         try {
-            const res = await axios.get('http://127.0.0.1:8000/api/dashboard-resumo/', config);
+            const res = await axios.get(`${API_BASE_URL}/api/dashboard-resumo/', config);
             console.log("Resumo Data:", res.data);
             setResumo(res.data);
         } catch (e) { console.error("Erro resumo:", e); }
 
         try {
-            const resGraf = await axios.get('http://127.0.0.1:8000/api/grafico-vendas/', config);
+            const resGraf = await axios.get(`${API_BASE_URL}/api/grafico-vendas/', config);
             if (resGraf.data && resGraf.data.length > 0 && resGraf.data[0].name !== 'Sem Vendas') {
                 setDadosGrafico(resGraf.data);
             } else {

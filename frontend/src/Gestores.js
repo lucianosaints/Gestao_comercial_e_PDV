@@ -3,6 +3,7 @@ import axios from 'axios';
 import Sidebar from './Sidebar';
 import { useNavigate } from 'react-router-dom';
 import { FaUserTie, FaPlus, FaTrash, FaStore, FaIdCard, FaEnvelope } from 'react-icons/fa';
+import API_BASE_URL from './config';
 
 function Gestores() {
   const navigate = useNavigate();
@@ -19,7 +20,7 @@ function Gestores() {
   const carregarGestores = async () => {
     const token = localStorage.getItem('access_token');
     try {
-      const response = await axios.get('http://127.0.0.1:8000/api/gestores/', {
+      const response = await axios.get(`${API_BASE_URL}/api/gestores/', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setGestores(response.data);
@@ -34,7 +35,7 @@ function Gestores() {
       if(!window.confirm("Tem certeza que deseja remover este usuário?")) return;
       const token = localStorage.getItem('access_token');
       try {
-          await axios.delete(`http://127.0.0.1:8000/api/gestores/${id}/`, {
+          await axios.delete(`${API_BASE_URL}/api/gestores/${id}/`, {
               headers: { Authorization: `Bearer ${token}` }
           });
           alert("Usuário removido!");

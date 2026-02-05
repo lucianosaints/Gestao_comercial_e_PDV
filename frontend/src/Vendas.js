@@ -3,6 +3,7 @@ import axios from 'axios';
 import Sidebar from './Sidebar';
 import TicketView from './components/TicketView';
 import {
+import API_BASE_URL from './config';
     FaShoppingCart, FaSearch, FaPlus, FaMinus, FaTimes,
     FaMoneyBillWave, FaBarcode, FaBox, FaTrash, FaCreditCard, FaQrcode, FaBars
 } from 'react-icons/fa';
@@ -29,7 +30,7 @@ function Vendas() {
     const getImageUrl = (path) => {
         if (!path) return null;
         if (path.startsWith('http')) return path;
-        return `http://127.0.0.1:8000${path}`;
+        return `${API_BASE_URL}${path}`;
     };
 
     const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -56,7 +57,7 @@ function Vendas() {
         const token = localStorage.getItem('access_token');
         if (!token) return;
         try {
-            const response = await axios.get('http://127.0.0.1:8000/api/bens/listar_todos/', {
+            const response = await axios.get(`${API_BASE_URL}/api/bens/listar_todos/', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const ativos = response.data.filter(p => !p.data_baixa);
@@ -126,7 +127,7 @@ function Vendas() {
                 }))
             };
 
-            const response = await axios.post('http://127.0.0.1:8000/api/vendas/', dadosVenda, {
+            const response = await axios.post(`${API_BASE_URL}/api/vendas/', dadosVenda, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 

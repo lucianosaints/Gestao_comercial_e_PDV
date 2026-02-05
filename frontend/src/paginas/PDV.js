@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import Sidebar from '../Sidebar';
 import { FaSearch, FaShoppingCart, FaTrash, FaMoneyBillWave, FaCreditCard, FaBarcode, FaCheck, FaBox, FaWhatsapp, FaPrint, FaShareAlt } from 'react-icons/fa';
+import API_BASE_URL from ../config';
 
 function PDV() {
     // Estados Globais
@@ -64,7 +65,7 @@ function PDV() {
 
         try {
             // URL Padrão = Paginada | Com Busca
-            let url = `http://127.0.0.1:8000/api/bens/?page=${paginaAtual}`;
+            let url = `${API_BASE_URL}/api/bens/?page=${paginaAtual}`;
             if (termo) {
                 url += `&search=${termo}`;
             }
@@ -154,7 +155,7 @@ function PDV() {
         };
 
         try {
-            await axios.post('http://127.0.0.1:8000/api/vendas/', payload, {
+            await axios.post(`${API_BASE_URL}/api/vendas/', payload, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 

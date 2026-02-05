@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { FaSave, FaArrowLeft, FaWarehouse, FaTrash, FaStore } from 'react-icons/fa';
+import API_BASE_URL from './config';
 
 function EditSala() {
   const { id } = useParams(); 
@@ -26,12 +27,12 @@ function EditSala() {
 
       try {
         // 1. Busca Lojas
-        const resUnidades = await axios.get('http://127.0.0.1:8000/api/unidades/', config);
+        const resUnidades = await axios.get(`${API_BASE_URL}/api/unidades/', config);
         setUnidades(resUnidades.data);
 
         // 2. Se for Edição, busca Sala
         if (id) {
-            const resSala = await axios.get(`http://127.0.0.1:8000/api/salas/${id}/`, config);
+            const resSala = await axios.get(`${API_BASE_URL}/api/salas/${id}/`, config);
             setNome(resSala.data.nome);
             const uId = typeof resSala.data.unidade === 'object' ? resSala.data.unidade.id : resSala.data.unidade;
             setUnidadeId(uId);
@@ -57,10 +58,10 @@ function EditSala() {
 
     try {
       if (id) {
-        await axios.put(`http://127.0.0.1:8000/api/salas/${id}/`, payload, config);
+        await axios.put(`${API_BASE_URL}/api/salas/${id}/`, payload, config);
         alert('Local atualizado!');
       } else {
-        await axios.post('http://127.0.0.1:8000/api/salas/', payload, config);
+        await axios.post(`${API_BASE_URL}/api/salas/', payload, config);
         alert('Local criado com sucesso!');
       }
       navigate('/salas');
@@ -73,7 +74,7 @@ function EditSala() {
       if(!window.confirm("Excluir este local?")) return;
       const token = localStorage.getItem('access_token');
       try {
-          await axios.delete(`http://127.0.0.1:8000/api/salas/${id}/`, { headers: { Authorization: `Bearer ${token}` } });
+          await axios.delete(`${API_BASE_URL}/api/salas/${id}/`, { headers: { Authorization: `Bearer ${token}` } });
           navigate('/salas');
       } catch (error) { alert("Erro ao excluir."); }
   };

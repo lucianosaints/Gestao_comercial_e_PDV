@@ -4,6 +4,7 @@ import Sidebar from './Sidebar';
 import CadastroCliente from './CadastroCliente';
 import { FaPlus, FaSearch, FaEdit, FaTrash, FaUser, FaPhone, FaMapMarkerAlt, FaBars } from 'react-icons/fa';
 import './Clientes.css'; // Novo CSS bonito
+import API_BASE_URL from './config';
 
 function Clientes() {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(window.innerWidth < 1024);
@@ -29,7 +30,7 @@ function Clientes() {
     const carregarClientes = async () => {
         const token = localStorage.getItem('access_token');
         try {
-            const response = await axios.get('http://127.0.0.1:8000/api/clientes/', {
+            const response = await axios.get(`${API_BASE_URL}/api/clientes/', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setClientes(response.data);
@@ -42,7 +43,7 @@ function Clientes() {
         if (!window.confirm("Tem certeza que deseja excluir este cliente?")) return;
         const token = localStorage.getItem('access_token');
         try {
-            await axios.delete(`http://127.0.0.1:8000/api/clientes/${id}/`, {
+            await axios.delete(`${API_BASE_URL}/api/clientes/${id}/`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             carregarClientes();

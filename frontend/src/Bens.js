@@ -5,6 +5,7 @@ import Sidebar from './Sidebar';
 import HistoricoModal from './HistoricoModal';
 import './Dashboard.css';
 import { FaEdit, FaTrash, FaPlus, FaHistory, FaSearch, FaBox, FaArrowLeft, FaBarcode, FaTag, FaBars } from 'react-icons/fa';
+import API_BASE_URL from './config';
 
 function Bens() {
   const navigate = useNavigate();
@@ -55,7 +56,7 @@ function Bens() {
       // Envia IDs como query param: ?ids=1,2,3
       const idsParam = selectedBens.join(',');
 
-      const response = await axios.get(`http://127.0.0.1:8000/api/relatorios/etiquetas/?ids=${idsParam}`, {
+      const response = await axios.get(`${API_BASE_URL}/api/relatorios/etiquetas/?ids=${idsParam}`, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: 'blob'
       });
@@ -105,7 +106,7 @@ function Bens() {
     };
 
     try {
-      const response = await axios.get('http://127.0.0.1:8000/api/bens/', {
+      const response = await axios.get(`${API_BASE_URL}/api/bens/', {
         headers: { Authorization: `Bearer ${token}` },
         params: apiParams
       });
@@ -130,7 +131,7 @@ function Bens() {
     if (window.confirm("Tem certeza que deseja excluir este produto do estoque?")) {
       const token = localStorage.getItem('access_token');
       try {
-        await axios.delete(`http://127.0.0.1:8000/api/bens/${id}/`, {
+        await axios.delete(`${API_BASE_URL}/api/bens/${id}/`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         fetchBens();
@@ -148,7 +149,7 @@ function Bens() {
     } else {
       const token = localStorage.getItem('access_token');
       try {
-        const res = await axios.get(`http://127.0.0.1:8000/api/bens/${bem.id}/historico/`, {
+        const res = await axios.get(`${API_BASE_URL}/api/bens/${bem.id}/historico/`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setHistoricoSelecionado(res.data);
@@ -206,7 +207,7 @@ function Bens() {
             <button onClick={async () => {
               const token = localStorage.getItem('access_token');
               try {
-                const response = await axios.get('http://127.0.0.1:8000/api/relatorio-inventario/', {
+                const response = await axios.get(`${API_BASE_URL}/api/relatorio-inventario/', {
                   headers: { Authorization: `Bearer ${token}` },
                   responseType: 'blob'
                 });

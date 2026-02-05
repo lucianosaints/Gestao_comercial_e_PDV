@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { FaWarehouse, FaArrowLeft, FaPlus } from 'react-icons/fa';
+import API_BASE_URL from './config';
 
 function LocaisPorUnidade() {
   const { id } = useParams(); // Pega o ID da Loja da URL
@@ -17,8 +18,8 @@ function LocaisPorUnidade() {
 
     // Busca os dados da Unidade e os Locais filtrados por ela
     Promise.all([
-      axios.get(`http://127.0.0.1:8000/api/unidades/${id}/`, config),
-      axios.get(`http://127.0.0.1:8000/api/salas/?unidade=${id}`, config)
+      axios.get(`${API_BASE_URL}/api/unidades/${id}/`, config),
+      axios.get(`${API_BASE_URL}/api/salas/?unidade=${id}`, config)
     ]).then(([resUnidade, resLocais]) => {
       setUnidade(resUnidade.data);
       setLocais(resLocais.data);

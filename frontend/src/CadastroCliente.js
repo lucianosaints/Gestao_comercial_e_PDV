@@ -3,6 +3,7 @@ import axios from 'axios';
 import './Clientes.css'; // Usando estilos do módulo Clientes
 import './AddBem.css'; // Fallback para inputs padrao
 import { FaUser, FaIdCard, FaPhone, FaEnvelope, FaMapMarkerAlt, FaSave, FaTimes } from 'react-icons/fa';
+import API_BASE_URL from './config';
 
 function CadastroCliente({ onClose, aoSalvar, clienteEdicao }) {
     const [nome, setNome] = useState('');
@@ -29,12 +30,12 @@ function CadastroCliente({ onClose, aoSalvar, clienteEdicao }) {
 
         try {
             if (clienteEdicao) {
-                await axios.put(`http://127.0.0.1:8000/api/clientes/${clienteEdicao.id}/`, dados, {
+                await axios.put(`${API_BASE_URL}/api/clientes/${clienteEdicao.id}/`, dados, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 alert("Cliente atualizado com sucesso!");
             } else {
-                await axios.post('http://127.0.0.1:8000/api/clientes/', dados, {
+                await axios.post(`${API_BASE_URL}/api/clientes/', dados, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 alert("Cliente cadastrado com sucesso!");

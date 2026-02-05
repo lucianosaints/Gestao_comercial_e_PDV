@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { FaLayerGroup, FaPlus, FaEdit, FaTrash, FaArrowLeft, FaSpinner } from 'react-icons/fa';
+import API_BASE_URL from './config';
 
 function Categorias() {
   const [categorias, setCategorias] = useState([]);
@@ -20,13 +21,13 @@ function Categorias() {
     try {
       setLoading(true);
       // Tentativa 1: Rota no plural (Padrão)
-      const response = await axios.get('http://127.0.0.1:8000/api/categorias/', config);
+      const response = await axios.get(`${API_BASE_URL}/api/categorias/', config);
       setCategorias(response.data);
     } catch (error) {
       console.warn("Rota plural falhou, tentando singular...", error);
       try {
         // Tentativa 2: Rota no singular (Caso o backend esteja diferente)
-        const responseAlt = await axios.get('http://127.0.0.1:8000/api/categoria/', config);
+        const responseAlt = await axios.get(`${API_BASE_URL}/api/categoria/', config);
         setCategorias(responseAlt.data);
       } catch (errAlt) {
         console.error("Erro total ao carregar categorias.");
@@ -44,7 +45,7 @@ function Categorias() {
     if (window.confirm("Tem certeza que deseja excluir esta categoria?")) {
         const token = localStorage.getItem('access_token');
         try {
-            await axios.delete(`http://127.0.0.1:8000/api/categorias/${id}/`, {
+            await axios.delete(`${API_BASE_URL}/api/categorias/${id}/`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             carregarCategorias(); // Recarrega a lista

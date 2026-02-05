@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { FaArrowLeft, FaBarcode, FaBoxOpen, FaExclamationTriangle, FaBars } from 'react-icons/fa';
 import './Unidades.css'; // Reutilizando os estilos
+import API_BASE_URL from './config';
 
 function BensPorUnidade() {
   const { id } = useParams();
@@ -36,15 +37,15 @@ function BensPorUnidade() {
       setErro(null);
 
       // 1. Busca o nome da unidade
-      const resUnidade = await axios.get(`http://127.0.0.1:8000/api/unidades/${id}/`, config);
+      const resUnidade = await axios.get(`${API_BASE_URL}/api/unidades/${id}/`, config);
       setUnidadeNome(resUnidade.data.nome);
 
       // 2. Busca os produtos (Fallback pattern)
       try {
-        const resBens = await axios.get(`http://127.0.0.1:8000/api/unidades/${id}/bens/`, config);
+        const resBens = await axios.get(`${API_BASE_URL}/api/unidades/${id}/bens/`, config);
         setBens(resBens.data.results || resBens.data); // Suporte a paginacao
       } catch (e) {
-        const resBensAlt = await axios.get(`http://127.0.0.1:8000/api/bens/?unidade=${id}`, config);
+        const resBensAlt = await axios.get(`${API_BASE_URL}/api/bens/?unidade=${id}`, config);
         setBens(resBensAlt.data.results || resBensAlt.data);
       }
     } catch (error) {

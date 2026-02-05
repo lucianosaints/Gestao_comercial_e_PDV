@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Sidebar from '../Sidebar'; // Se estiver na pasta src, use './Sidebar'
 import { FaCalendarAlt, FaSearch, FaMoneyBillWave, FaCreditCard, FaQrcode } from 'react-icons/fa';
+import API_BASE_URL from ../config';
 
 function RelatorioVendas() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(window.innerWidth < 768);
@@ -19,7 +20,7 @@ function RelatorioVendas() {
     const token = localStorage.getItem('access_token');
     try {
       // Busca as vendas filtradas pela data
-      const response = await axios.get(`http://127.0.0.1:8000/api/vendas/?data=${filtroData}`, {
+      const response = await axios.get(`${API_BASE_URL}/api/vendas/?data=${filtroData}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setVendas(response.data);

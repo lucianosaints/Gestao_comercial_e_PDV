@@ -5,6 +5,7 @@ import Sidebar from './Sidebar';
 import { FaBox, FaSave, FaArrowLeft, FaTruck, FaCamera, FaSpinner } from 'react-icons/fa';
 // Não dependemos mais do CSS externo para o layout principal
 import './Dashboard.css'; 
+import API_BASE_URL from './config';
 
 function EditBem() {
   const { id } = useParams();
@@ -37,10 +38,10 @@ function EditBem() {
     try {
       setIsLoading(true);
       const [resUni, resCat, resSalas, resForn] = await Promise.all([
-        axios.get('http://127.0.0.1:8000/api/unidades/', config),
-        axios.get('http://127.0.0.1:8000/api/categorias/', config),
-        axios.get('http://127.0.0.1:8000/api/salas/', config),
-        axios.get('http://127.0.0.1:8000/api/fornecedores/', config)
+        axios.get(`${API_BASE_URL}/api/unidades/', config),
+        axios.get(`${API_BASE_URL}/api/categorias/', config),
+        axios.get(`${API_BASE_URL}/api/salas/', config),
+        axios.get(`${API_BASE_URL}/api/fornecedores/', config)
       ]);
 
       setUnidades(resUni.data);
@@ -48,7 +49,7 @@ function EditBem() {
       setSalas(resSalas.data);
       setFornecedores(resForn.data);
 
-      const response = await axios.get(`http://127.0.0.1:8000/api/bens/${id}/`, config);
+      const response = await axios.get(`${API_BASE_URL}/api/bens/${id}/`, config);
       const produto = response.data;
 
       setFormData({
@@ -66,7 +67,7 @@ function EditBem() {
       });
 
       if (produto.imagem) {
-          const imgUrl = produto.imagem.startsWith('http') ? produto.imagem : `http://127.0.0.1:8000${produto.imagem}`;
+          const imgUrl = produto.imagem.startsWith('http') ? produto.imagem : `${API_BASE_URL}${produto.imagem}`;
           setPreviewUrl(imgUrl);
       }
 
@@ -129,7 +130,7 @@ function EditBem() {
     }
 
     try {
-      await axios.put(`http://127.0.0.1:8000/api/bens/${id}/`, data, {
+      await axios.put(`${API_BASE_URL}/api/bens/${id}/`, data, {
         headers: { 
             Authorization: `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'

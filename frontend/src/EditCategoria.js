@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { FaTags, FaSave, FaArrowLeft, FaTrash } from 'react-icons/fa';
+import API_BASE_URL from './config';
 
 function EditCategoria() {
   const { id } = useParams(); // Pega o ID da URL
@@ -20,7 +21,7 @@ function EditCategoria() {
     const token = localStorage.getItem('access_token');
     try {
       // Busca os dados da categoria específica
-      const response = await axios.get(`http://127.0.0.1:8000/api/categorias/${id}/`, {
+      const response = await axios.get(`${API_BASE_URL}/api/categorias/${id}/`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setNome(response.data.nome);
@@ -35,7 +36,7 @@ function EditCategoria() {
     const token = localStorage.getItem('access_token');
     
     try {
-      await axios.put(`http://127.0.0.1:8000/api/categorias/${id}/`, 
+      await axios.put(`${API_BASE_URL}/api/categorias/${id}/`, 
         { nome: nome }, 
         { headers: { Authorization: `Bearer ${token}` } }
       );

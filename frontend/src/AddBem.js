@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { FaBox, FaSave, FaArrowLeft, FaTruck, FaCamera } from 'react-icons/fa';
+import API_BASE_URL from './config';
 
 function AddBem() {
   const navigate = useNavigate();
@@ -45,10 +46,10 @@ function AddBem() {
 
     try {
       const [resUnidades, resCategorias, resSalas, resFornecedores] = await Promise.all([
-        axios.get('http://127.0.0.1:8000/api/unidades/', config),
-        axios.get('http://127.0.0.1:8000/api/categorias/', config),
-        axios.get('http://127.0.0.1:8000/api/salas/', config),
-        axios.get('http://127.0.0.1:8000/api/fornecedores/', config)
+        axios.get(`${API_BASE_URL}/api/unidades/', config),
+        axios.get(`${API_BASE_URL}/api/categorias/', config),
+        axios.get(`${API_BASE_URL}/api/salas/', config),
+        axios.get(`${API_BASE_URL}/api/fornecedores/', config)
       ]);
 
       setUnidades(resUnidades.data);
@@ -111,7 +112,7 @@ function AddBem() {
     }
 
     try {
-      await axios.post('http://127.0.0.1:8000/api/bens/', data, {
+      await axios.post(`${API_BASE_URL}/api/bens/', data, {
         headers: { Authorization: `Bearer ${token}` }
       });
       alert('Produto cadastrado com sucesso!');

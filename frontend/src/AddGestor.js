@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { FaUserPlus, FaSave, FaArrowLeft, FaStore, FaIdCard, FaEnvelope, FaUser, FaLock, FaUserTag } from 'react-icons/fa';
+import API_BASE_URL from './config';
 
 function AddGestor() {
   const navigate = useNavigate();
@@ -23,7 +24,7 @@ function AddGestor() {
     const carregarUnidades = async () => {
         const token = localStorage.getItem('access_token');
         try {
-            const response = await axios.get('http://127.0.0.1:8000/api/unidades/', {
+            const response = await axios.get(`${API_BASE_URL}/api/unidades/', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             setListaUnidades(response.data);
@@ -41,7 +42,7 @@ function AddGestor() {
     const dadosParaEnviar = { ...formData, password: formData.password || 'mudar123' };
 
     try {
-      await axios.post('http://127.0.0.1:8000/api/gestores/', dadosParaEnviar, {
+      await axios.post(`${API_BASE_URL}/api/gestores/', dadosParaEnviar, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       alert('Usuário cadastrado com sucesso!');

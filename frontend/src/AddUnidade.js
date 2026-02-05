@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { FaStore, FaSave, FaArrowLeft, FaBars } from 'react-icons/fa';
 import './Unidades.css'; // Usando estilos premium
+import API_BASE_URL from './config';
 
 function AddUnidade() {
   const navigate = useNavigate();
@@ -20,7 +21,7 @@ function AddUnidade() {
     const token = localStorage.getItem('access_token');
 
     try {
-      await axios.post('http://127.0.0.1:8000/api/unidades/',
+      await axios.post(`${API_BASE_URL}/api/unidades/',
         { nome, endereco },
         { headers: { Authorization: `Bearer ${token}` } }
       );

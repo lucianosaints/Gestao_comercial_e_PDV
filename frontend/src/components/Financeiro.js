@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import Sidebar from '../Sidebar';
 import { FaCheckCircle, FaPlus, FaTrash, FaCalendarAlt } from 'react-icons/fa';
+import API_BASE_URL from ../config';
 
 function Financeiro() {
     // Detecta Mobile
@@ -27,7 +28,7 @@ function Financeiro() {
     });
 
     const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
-    const API_URL = 'http://127.0.0.1:8000/api/despesas/';
+    const API_URL = `${API_BASE_URL}/api/despesas/';
 
     // Monitora redimensionamento da tela
     useEffect(() => {
@@ -176,7 +177,7 @@ function Financeiro() {
                         try {
                             // Passa o filtro de mês para a API se ele existir
                             const params = mesFiltro ? `?mes=${mesFiltro}` : '';
-                            const response = await axios.get(`http://127.0.0.1:8000/api/relatorio-financeiro/${params}`, {
+                            const response = await axios.get(`${API_BASE_URL}/api/relatorio-financeiro/${params}`, {
                                 headers: { Authorization: `Bearer ${token}` },
                                 responseType: 'blob'
                             });

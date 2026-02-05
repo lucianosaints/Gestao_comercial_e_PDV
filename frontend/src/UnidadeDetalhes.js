@@ -4,6 +4,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { FaSearch, FaArrowLeft, FaEdit, FaTimes, FaBars, FaBarcode, FaBox, FaDollarSign, FaSortAmountUp } from 'react-icons/fa';
 import './Dashboard.css';
+import API_BASE_URL from './config';
 
 function UnidadeDetalhes() {
   const { id } = useParams();
@@ -60,7 +61,7 @@ function UnidadeDetalhes() {
       return;
     }
     try {
-      const response = await axios.get('http://127.0.0.1:8000/api/bens/', {
+      const response = await axios.get(`${API_BASE_URL}/api/bens/', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       // Filtra apenas os produtos desta loja (unidade)
@@ -78,7 +79,7 @@ function UnidadeDetalhes() {
       return;
     }
 
-    axios.get(`http://127.0.0.1:8000/api/unidades/${id}/`, {
+    axios.get(`${API_BASE_URL}/api/unidades/${id}/`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
     .then(response => {
@@ -113,7 +114,7 @@ function UnidadeDetalhes() {
     };
 
     try {
-        await axios.patch(`http://127.0.0.1:8000/api/bens/${bemEditando.id}/`, dadosParaEnviar, {
+        await axios.patch(`${API_BASE_URL}/api/bens/${bemEditando.id}/`, dadosParaEnviar, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         alert('Produto atualizado com sucesso!');

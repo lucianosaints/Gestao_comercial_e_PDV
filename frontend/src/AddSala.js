@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { FaSave, FaArrowLeft } from 'react-icons/fa';
 import './Dashboard.css';
+import API_BASE_URL from './config';
 
 function AddSala() {
   const navigate = useNavigate();
@@ -17,7 +18,7 @@ function AddSala() {
     const config = { headers: { Authorization: `Bearer ${token}` } };
     
     // Carrega as unidades (Lojas) para vincular o novo local
-    axios.get('http://127.0.0.1:8000/api/unidades/', config)
+    axios.get(`${API_BASE_URL}/api/unidades/', config)
       .then(res => setUnidades(res.data))
       .catch(err => console.error(err));
   }, []);
@@ -28,7 +29,7 @@ function AddSala() {
     const config = { headers: { Authorization: `Bearer ${token}` } };
 
     try {
-      await axios.post('http://127.0.0.1:8000/api/salas/', {
+      await axios.post(`${API_BASE_URL}/api/salas/', {
         nome: nome,
         unidade: unidadeId
       }, config);

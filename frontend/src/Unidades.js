@@ -6,6 +6,7 @@ import {
     FaStore, FaMapMarkerAlt, FaPlus, FaArrowLeft, FaTrash, FaBuilding, FaBars
 } from 'react-icons/fa';
 import './Unidades.css';
+import API_BASE_URL from './config';
 
 function Unidades() {
     const [unidades, setUnidades] = useState([]);
@@ -30,7 +31,7 @@ function Unidades() {
     const carregarUnidades = async () => {
         const token = localStorage.getItem('access_token');
         try {
-            const response = await axios.get('http://127.0.0.1:8000/api/unidades/', {
+            const response = await axios.get(`${API_BASE_URL}/api/unidades/', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setUnidades(response.data);
@@ -45,7 +46,7 @@ function Unidades() {
         if (window.confirm("Tem certeza que deseja excluir esta loja?")) {
             const token = localStorage.getItem('access_token');
             try {
-                await axios.delete(`http://127.0.0.1:8000/api/unidades/${id}/`, {
+                await axios.delete(`${API_BASE_URL}/api/unidades/${id}/`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 carregarUnidades();
