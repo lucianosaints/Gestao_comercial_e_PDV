@@ -6,6 +6,7 @@ COPY package.json package-lock.json ./
 # Adicionar --legacy-peer-deps para evitar conflitos de versão
 # e aumentar limite de memória do Node
 ENV NODE_OPTIONS="--max-old-space-size=4096"
+ENV GENERATE_SOURCEMAP=false
 RUN npm install --legacy-peer-deps
 
 COPY . .
