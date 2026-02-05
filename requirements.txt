@@ -1,7 +1,15 @@
 Django>=5.0
 djangorestframework
+djangorestframework-simplejwt
+drf-spectacular
 django-cors-headers
+django-extensions
 reportlab
 openpyxl
 Pillow
 gunicorn
+psycopg2-binary
+requests
+python-dateutil 
+numpy
+pandas
