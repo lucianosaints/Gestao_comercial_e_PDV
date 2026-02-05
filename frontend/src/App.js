@@ -107,15 +107,13 @@ function App() {
         {/* --- FORNECEDORES (Gerente e Estoque) --- */}
         <Route path="/fornecedores" element={<RestrictedRoute allowedRoles={['gerente', 'estoque']}><GerenciarFornecedores /></RestrictedRoute>} />
 
-// --- VENDAS E FINANCEIRO ---
+        {/* --- VENDAS E FINANCEIRO --- */}
         <Route path="/vendas" element={<PrivateRoute><Vendas /></PrivateRoute>} />
-        <Route path="/pdv" element={<PrivateRoute><PDV /></PrivateRoute>} /> {/* NOVA ROTA PDV */}
-        <Route path="/despesas" element={<PrivateRoute><Financeiro /></PrivateRoute>} />
-        <Route path="/pdv" element={<PrivateRoute><PDV /></PrivateRoute>} /> {/* PDV é livre para autênticados */}
+        <Route path="/pdv" element={<PrivateRoute><PDV /></PrivateRoute>} />
         <Route path="/despesas" element={<RestrictedRoute allowedRoles={['gerente']}><Financeiro /></RestrictedRoute>} />
-        <Route path="/dashboard-financeiro" element={<RestrictedRoute allowedRoles={['gerente']}><DashboardFinanceiro /></RestrictedRoute>} /> {/* Nova Rota */}
+        <Route path="/dashboard-financeiro" element={<RestrictedRoute allowedRoles={['gerente']}><DashboardFinanceiro /></RestrictedRoute>} />
         <Route path="/relatorio-vendas" element={<PrivateRoute><RelatorioVendas /></PrivateRoute>} />
-        <Route path="/importar-nota" element={<RestrictedRoute allowedRoles={['gerente']}><ImportarNota /></RestrictedRoute>} /> {/* NOVA ROTA IMPORT */}
+        <Route path="/importar-nota" element={<RestrictedRoute allowedRoles={['gerente']}><ImportarNota /></RestrictedRoute>} />
 
         {/* --- CLIENTES --- */}
         <Route path="/clientes" element={<PrivateRoute><Clientes /></PrivateRoute>} />
