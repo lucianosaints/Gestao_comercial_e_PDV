@@ -10,14 +10,14 @@ services:
     environment:
       - DEBUG=1
       # Quando usar PostgreSQL, adicionar configs aqui
-    command: python manage.py runserver 0.0.0.0:8000 
+    command: python manage.py runserver 0.0.0.0:8000
     # Em produção, comente a linha acima e descomente abaixo:
     # command: gunicorn first_steps_django.wsgi:application --bind 0.0.0.0:8000
 
   frontend:
     build: ./frontend
     ports:
-      - "3000:80"
+      - "80:80"
     depends_on:
       - backend
     # Mapeamento para desenvolvimento em tempo real (opcional)
