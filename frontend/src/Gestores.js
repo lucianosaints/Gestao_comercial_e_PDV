@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Sidebar from './Sidebar';
 import { useNavigate } from 'react-router-dom';
-import { FaUserTie, FaPlus, FaTrash, FaStore, FaIdCard, FaEnvelope } from 'react-icons/fa';
+import { FaUserTie, FaPlus, FaTrash, FaStore, FaIdCard, FaEnvelope, FaEdit } from 'react-icons/fa';
 import API_BASE_URL from './config';
 
 function Gestores() {
@@ -32,17 +32,17 @@ function Gestores() {
   };
 
   const deletarGestor = async (id) => {
-      if(!window.confirm("Tem certeza que deseja remover este usuário?")) return;
-      const token = localStorage.getItem('access_token');
-      try {
-          await axios.delete(`${API_BASE_URL}/api/gestores/${id}/`, {
-              headers: { Authorization: `Bearer ${token}` }
-          });
-          alert("Usuário removido!");
-          carregarGestores();
-      } catch (error) {
-          alert("Erro ao remover usuário.");
-      }
+    if (!window.confirm("Tem certeza que deseja remover este usuário?")) return;
+    const token = localStorage.getItem('access_token');
+    try {
+      await axios.delete(`${API_BASE_URL}/api/gestores/${id}/`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert("Usuário removido!");
+      carregarGestores();
+    } catch (error) {
+      alert("Erro ao remover usuário.");
+    }
   };
 
   const s = {
@@ -63,38 +63,39 @@ function Gestores() {
       <Sidebar isCollapsed={isSidebarCollapsed} toggleCollapse={toggleSidebar} />
       <main style={s.main}>
         <div style={s.header}>
-            <div>
-                <h1 style={{margin:0, color:'#1f2937', display:'flex', alignItems:'center', gap:'10px'}}>
-                    <FaUserTie style={{color:'#2563eb'}}/> Equipe & Acessos
-                </h1>
-                <p style={{margin:'5px 0 0', color:'#6b7280'}}>Gerencie quem tem acesso ao sistema.</p>
-            </div>
-            <button onClick={() => navigate('/add-gestor')} style={{background: '#2563eb', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold'}}>
-                <FaPlus /> Novo Usuário
-            </button>
+          <div>
+            <h1 style={{ margin: 0, color: '#1f2937', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <FaUserTie style={{ color: '#2563eb' }} /> Equipe & Acessos
+            </h1>
+            <p style={{ margin: '5px 0 0', color: '#6b7280' }}>Gerencie quem tem acesso ao sistema.</p>
+          </div>
+          <button onClick={() => navigate('/add-gestor')} style={{ background: '#2563eb', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}>
+            <FaPlus /> Novo Usuário
+          </button>
         </div>
 
         {loading ? <p>Carregando equipe...</p> : (
-            <div style={s.grid}>
-                {gestores.map(gestor => (
-                    <div key={gestor.id} style={s.card}>
-                        <div style={s.cardHeader}>
-                            <div style={s.avatar}><FaUserTie /></div>
-                            <div>
-                                <h3 style={{margin:0, fontSize:'16px', color:'#1f2937'}}>{gestor.nome}</h3>
-                                <span style={s.badge}>Colaborador</span>
-                            </div>
-                        </div>
-                        <div style={s.infoRow}><FaIdCard color="#9ca3af"/> <span>CPF: {gestor.cpf}</span></div>
-                        <div style={s.infoRow}><FaEnvelope color="#9ca3af"/> <span>{gestor.email}</span></div>
-                        <div style={s.infoRow}><FaStore color="#9ca3af"/> <span>{gestor.unidade_nome || 'Sem Loja Fixa'}</span></div>
-                        <div style={s.actions}>
-                            <button onClick={() => deletarGestor(gestor.id)} style={{border:'none', background:'#fee2e2', color:'#dc2626', padding:'8px', borderRadius:'6px', cursor:'pointer'}}><FaTrash /></button>
-                        </div>
-                    </div>
-                ))}
-                {gestores.length === 0 && <p>Nenhum usuário encontrado.</p>}
-            </div>
+          <div style={s.grid}>
+            {gestores.map(gestor => (
+              <div key={gestor.id} style={s.card}>
+                <div style={s.cardHeader}>
+                  <div style={s.avatar}><FaUserTie /></div>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '16px', color: '#1f2937' }}>{gestor.nome}</h3>
+                    <span style={s.badge}>Colaborador</span>
+                  </div>
+                </div>
+                <div style={s.infoRow}><FaIdCard color="#9ca3af" /> <span>CPF: {gestor.cpf}</span></div>
+                <div style={s.infoRow}><FaEnvelope color="#9ca3af" /> <span>{gestor.email}</span></div>
+                <div style={s.infoRow}><FaStore color="#9ca3af" /> <span>{gestor.unidade_nome || 'Sem Loja Fixa'}</span></div>
+                <div style={s.actions}>
+                  <button onClick={() => navigate(`/edit-gestor/${gestor.id}`)} style={{ border: 'none', background: '#fef3c7', color: '#d97706', padding: '8px', borderRadius: '6px', cursor: 'pointer' }} title="Editar"><FaEdit /></button>
+                  <button onClick={() => deletarGestor(gestor.id)} style={{ border: 'none', background: '#fee2e2', color: '#dc2626', padding: '8px', borderRadius: '6px', cursor: 'pointer' }} title="Excluir"><FaTrash /></button>
+                </div>
+              </div>
+            ))}
+            {gestores.length === 0 && <p>Nenhum usuário encontrado.</p>}
+          </div>
         )}
       </main>
     </div>

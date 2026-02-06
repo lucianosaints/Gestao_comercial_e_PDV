@@ -32,6 +32,7 @@ import EditSala from './EditSala';
 // --- GESTÃO E RELATÓRIOS ---
 import Gestores from './Gestores';
 import AddGestor from './AddGestor';
+import EditGestor from './EditGestor';
 import RelatorioVendas from './paginas/TelaRelatorio';
 import GerenciarFornecedores from './paginas/GerenciarFornecedores';
 import DashboardFinanceiro from './paginas/DashboardFinanceiro'; // <--- NOVO IMPORT
@@ -121,6 +122,7 @@ function App() {
         {/* --- GESTORES --- */}
         <Route path="/gestores" element={<PrivateRoute><Gestores /></PrivateRoute>} />
         <Route path="/add-gestor" element={<PrivateRoute><AddGestor /></PrivateRoute>} />
+        <Route path="/edit-gestor/:id" element={<PrivateRoute><EditGestor /></PrivateRoute>} />
 
       </Routes>
     </Router>
