@@ -34,13 +34,15 @@ function RelatorioVendas() {
     const novoResumo = { pix: 0, dinheiro: 0, credito: 0, debito: 0, mumbuca: 0 };
     
     dados.forEach(venda => {
-        const valor = parseFloat(venda.valor_total);
-        const tipo = venda.forma_pagamento; // GARANTA QUE O BACKEND MANDA ISSO (PIX, DINHEIRO, ETC)
+        const valor = parseFloat(venda.valor_total || 0);
+        const tipo = (venda.forma_pagamento || '').toUpperCase().trim();
         
         if (tipo === 'PIX') novoResumo.pix += valor;
         else if (tipo === 'DINHEIRO') novoResumo.dinheiro += valor;
-        else if (tipo === 'CREDITO') novoResumo.credito += valor;
-        else if (tipo === 'DEBITO') novoResumo.debito += valor;
+        // Suporte para 'CREDITO' (antigo) e 'CARTAO CREDITO' (novo)
+        else if (tipo === 'CREDITO' || tipo === 'CARTAO CREDITO' || tipo.includes('CREDITO')) novoResumo.credito += valor;
+        // Suporte para 'DEBITO' (antigo) e 'CARTAO DEBITO' (novo)
+        else if (tipo === 'DEBITO' || tipo === 'CARTAO DEBITO' || tipo.includes('DEBITO')) novoResumo.debito += valor;
         else if (tipo === 'MUMBUCA') novoResumo.mumbuca += valor;
     });
     setResumo(novoResumo);
