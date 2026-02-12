@@ -503,8 +503,9 @@ class DashboardFinanceiroView(APIView):
         seis_meses_atras = hoje - datetime.timedelta(days=180)
 
         # 1. KPIs GERAIS
-        total_receita = Venda.objects.aggregate(Sum('valor_total'))['valor_total__sum'] or 0.00
-        total_despesa = Despesa.objects.aggregate(Sum('valor'))['valor__sum'] or 0.00
+        # 1. KPIs GERAIS
+        total_receita = float(Venda.objects.aggregate(Sum('valor_total'))['valor_total__sum'] or 0.00)
+        total_despesa = float(Despesa.objects.aggregate(Sum('valor'))['valor__sum'] or 0.00)
         total_vendas_count = Venda.objects.count()
         
         # Ticket Médio
