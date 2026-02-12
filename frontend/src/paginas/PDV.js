@@ -20,7 +20,7 @@ function PDV() {
 
     // Dados da Venda
     const [formaPagamento, setFormaPagamento] = useState('DINHEIRO');
-    const [desconto, setDesconto] = useState(0);
+    const [descontoPorcento, setDescontoPorcento] = useState(0);
     const [vendaConcluida, setVendaConcluida] = useState(null); // Armazena dados da ultima venda para recibo
     const [valorPago, setValorPago] = useState(''); // Para calcular troco
     const [whatsappNumero, setWhatsappNumero] = useState(''); // Numero para envio
@@ -134,7 +134,8 @@ function PDV() {
 
     // --- CÁLCULOS ---
     const subtotal = carrinho.reduce((acc, item) => acc + (parseFloat(item.valor) * item.quantidade), 0);
-    const totalFinal = Math.max(0, subtotal - parseFloat(desconto || 0));
+    const descontoValor = subtotal * (parseFloat(descontoPorcento || 0) / 100);
+    const totalFinal = Math.max(0, subtotal - descontoValor);
     const troco = valorPago ? Math.max(0, parseFloat(valorPago) - totalFinal) : 0;
 
     // --- FINALIZAR VENDA ---
@@ -149,7 +150,7 @@ function PDV() {
                 preco_unitario: item.valor
             })),
             valor_total: totalFinal,
-            desconto: parseFloat(desconto || 0),
+            desconto: parseFloat(descontoValor.toFixed(2)),
             forma_pagamento: formaPagamento,
             cliente_solicitou_cupom: solicitaCupom,
             cpf_cnpj_cliente: solicitaCupom ? cpfCnpj : null,
@@ -165,7 +166,7 @@ function PDV() {
             setVendaConcluida({
                 itens: [...carrinho],
                 subtotal: subtotal,
-                desconto: parseFloat(desconto || 0),
+                desconto: descontoValor,
                 total: totalFinal,
                 valorPago: parseFloat(valorPago || 0),
                 troco: troco,
@@ -176,7 +177,7 @@ function PDV() {
             setCarrinho([]);
             setModalPagamentoOpen(false);
             setValorPago('');
-            setDesconto(0);
+            setDescontoPorcento(0);
             setSolicitaCupom(false);
             setCpfCnpj('');
             setObservacao('');
@@ -479,7 +480,7 @@ function PDV() {
                         </div>
                         <div style={s.totalDisplay}>
                             R$ {totalFinal.toFixed(2)}
-                            {desconto > 0 && <div style={{ fontSize: '14px', color: '#10b981', fontWeight: 'normal' }}>(- R$ {parseFloat(desconto).toFixed(2)} desc)</div>}
+                            {descontoValor > 0 && <div style={{ fontSize: '14px', color: '#10b981', fontWeight: 'normal' }}>(- R$ {descontoValor.toFixed(2)} | {descontoPorcento}%)</div>}
                         </div>
 
                         <button
@@ -522,11 +523,13 @@ function PDV() {
 
                         <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
                             <div style={{ flex: 1 }}>
-                                <label style={{ display: 'block', marginBottom: '5px', color: '#64748b' }}>Desconto (R$)</label>
+                                <label style={{ display: 'block', marginBottom: '5px', color: '#64748b' }}>Desconto (%)</label>
                                 <input
                                     type="number"
-                                    value={desconto}
-                                    onChange={e => setDesconto(e.target.value)}
+                                    min="0"
+                                    max="100"
+                                    value={descontoPorcento}
+                                    onChange={e => setDescontoPorcento(e.target.value)}
                                     style={{ width: '100%', padding: '10px', fontSize: '16px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
                                 />
                             </div>
