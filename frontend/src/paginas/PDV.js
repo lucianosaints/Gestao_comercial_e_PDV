@@ -26,6 +26,7 @@ function PDV() {
     const [whatsappNumero, setWhatsappNumero] = useState(''); // Numero para envio
     const [solicitaCupom, setSolicitaCupom] = useState(false);
     const [cpfCnpj, setCpfCnpj] = useState('');
+    const [observacao, setObservacao] = useState('');
 
     // Estado de Paginação
     const [paginaAtual, setPaginaAtual] = useState(1);
@@ -151,7 +152,8 @@ function PDV() {
             desconto: parseFloat(desconto || 0),
             forma_pagamento: formaPagamento,
             cliente_solicitou_cupom: solicitaCupom,
-            cpf_cnpj_cliente: solicitaCupom ? cpfCnpj : null
+            cpf_cnpj_cliente: solicitaCupom ? cpfCnpj : null,
+            observacao: observacao
         };
 
         try {
@@ -177,6 +179,7 @@ function PDV() {
             setDesconto(0);
             setSolicitaCupom(false);
             setCpfCnpj('');
+            setObservacao('');
             carregarProdutos();
         } catch (error) {
             console.error(error);
@@ -574,6 +577,16 @@ function PDV() {
                                     />
                                 </div>
                             )}
+                        </div>
+
+                        <div style={{ marginBottom: '20px' }}>
+                            <label style={{ display: 'block', marginBottom: '5px', color: '#64748b' }}>Observação (Opcional)</label>
+                            <textarea
+                                value={observacao}
+                                onChange={e => setObservacao(e.target.value)}
+                                placeholder="Detalhes adicionais sobre a venda..."
+                                style={{ width: '100%', padding: '10px', fontSize: '14px', borderRadius: '6px', border: '1px solid #cbd5e1', resize: 'vertical', minHeight: '60px' }}
+                            />
                         </div>
 
                         <div style={{ display: 'flex', gap: '10px' }}>

@@ -88,6 +88,7 @@ class Venda(models.Model):
     cliente_solicitou_cupom = models.BooleanField(default=False)
     cpf_cnpj_cliente = models.CharField(max_length=20, blank=True, null=True)
     telefone_cliente = models.CharField(max_length=20, blank=True, null=True)
+    observacao = models.TextField(blank=True, null=True)
 
     def __str__(self): return f"Venda #{self.id}"
 

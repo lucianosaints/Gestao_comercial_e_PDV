@@ -85,7 +85,7 @@ class VendaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Venda
-        fields = ['id', 'data_venda', 'valor_total', 'desconto', 'forma_pagamento', 'cliente_solicitou_cupom', 'cpf_cnpj_cliente', 'telefone_cliente', 'itens']
+        fields = ['id', 'data_venda', 'valor_total', 'desconto', 'forma_pagamento', 'cliente_solicitou_cupom', 'cpf_cnpj_cliente', 'telefone_cliente', 'observacao', 'itens']
 
     def create(self, validated_data):
         itens_data = validated_data.pop('itens')
