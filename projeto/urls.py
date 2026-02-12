@@ -59,12 +59,14 @@ urlpatterns = [
     # --- ROTA DE CONTROLE DE ACESSO (CARGOS) ---
     path('api/usuario-atual/', usuario_atual, name='usuario-atual'),
 
-    # --- RELATÓRIOS ---
-    path('api/relatorio-vendas/', RelatorioVendasView.as_view(), name='relatorio-vendas'),
-    path('api/relatorio-inventario/', RelatorioInventarioView.as_view(), name='relatorio-inventario'),
-    path('api/relatorio-financeiro/', RelatorioDespesasView.as_view(), name='relatorio-financeiro'),
-    path('api/relatorios/etiquetas/', EtiquetasPDFView.as_view(), name='etiquetas_pdf'),
-    path('api/dashboard-financeiro/', DashboardFinanceiroView.as_view(), name='dashboard-financeiro'),
+    # --- INCLUINDO ROTAS DO CORE (Recomendado) ---
+    path('api/', include('core.urls')), 
+    
+    # OBS: As rotas abaixo podem estar duplicadas se já estiverem em core/urls.py.
+    # O Django vai resolver a primeira que encontrar. 
+    # Deixando aqui por garantia de compatibilidade com versões antigas do frontend cacheado.
+    
+    path('api/dashboard-financeiro/', DashboardFinanceiroView.as_view(), name='dashboard-financeiro-legacy'),
 ]
 
 # --- LIBERA AS FOTOS EM MODO DEBUG ---

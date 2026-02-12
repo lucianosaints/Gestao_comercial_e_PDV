@@ -36,6 +36,8 @@ function DashboardFinanceiro() {
                 setData(response.data);
             } catch (error) {
                 console.error("Erro ao carregar dashboard", error);
+                window.debugError = error.message + (error.response ? ` (Status: ${error.response.status} - ${JSON.stringify(error.response.data)})` : "");
+                setData(null); // Ensure data is null to trigger error view
             } finally {
                 setLoading(false);
             }
@@ -89,7 +91,13 @@ function DashboardFinanceiro() {
     };
 
     if (loading) return <div style={{ display: 'flex', justifyContent: 'center', marginTop: '50px' }}>Carregando...</div>;
-    if (!data) return <div style={{ display: 'flex', justifyContent: 'center', marginTop: '50px' }}>Erro ao carregar dados.</div>;
+    if (loading) return <div style={{ display: 'flex', justifyContent: 'center', marginTop: '50px' }}>Carregando...</div>;
+    if (!data) return (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '50px', color: '#ef4444' }}>
+            <h2 style={{ fontSize: '24px', marginBottom: '10px' }}>Erro ao carregar dados</h2>
+            <p style={{ fontSize: '16px' }}>{window.debugError || "Verifique sua conexão ou contate o suporte."}</p>
+        </div>
+    );
 
     const { kpis, grafico_mensal, grafico_pizza, top_produtos } = data;
 
