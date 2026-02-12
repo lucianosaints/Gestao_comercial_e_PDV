@@ -14,6 +14,7 @@ from .views import (
     GraficoVendasView,
     RelatorioVendasView,     # <--- NOVO
     RelatorioInventarioView, # <--- NOVO
+    DashboardFinanceiroView, # <--- NOVO
     usuario_atual,           # <--- NOVO
     ClienteViewSet,           # <--- NOVO
     EtiquetasPDFView,
@@ -38,6 +39,7 @@ urlpatterns = [
     path('grafico-vendas/', GraficoVendasView.as_view(), name='grafico-vendas'),
     path('api/relatorios/vendas/', RelatorioVendasView.as_view(), name='relatorio_vendas'),
     path('api/relatorio-inventario/', RelatorioInventarioView.as_view(), name='relatorio_inventario'),
+    path('api/dashboard-financeiro/', DashboardFinanceiroView.as_view(), name='dashboard-financeiro'), # <--- ROTA NOVA
     path('api/relatorios/etiquetas/', EtiquetasPDFView.as_view(), name='etiquetas_pdf'), # <--- ROTA NOVA
     path('api/importar-xml/', ImportarXMLView.as_view(), name='importar_xml'),
     path('me/', usuario_atual, name='usuario-atual'), # <--- JA QUE ESTAVA NA VIEW, VOU EXPOR AQUI
